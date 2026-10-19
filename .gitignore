@@ -1,0 +1,12 @@
+﻿# Backups locais datados (fora do controle de versao)
+_backup/
+
+# Logs gerados em tempo de execucao
+*.log
+ultima-saida.txt
+resultado.txt
+snapshot.json
+
+# Temporarios do build
+*.pdb
+obj/
