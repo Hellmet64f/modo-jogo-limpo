@@ -89,6 +89,12 @@ function Falhou([string]$m) {
 function Aviso([string]$m) { Log $m 'Yellow' }
 function Titulo([string]$m) { Write-Host "  $m" -ForegroundColor Cyan }
 
+function Set-Power([string[]]$cmd) {
+    # O powercfg devolve codigo diferente de zero quando um alias nao existe.
+    # Sem esta verificacao o erro aparecia cru no registo do app.
+    $o = & powercfg @cmd 2>&1
+    if ($LASTEXITCODE -ne 0) { Aviso "powercfg $($cmd[1]) falhou: $o" }
+}
 # =====================================================================
 #  CATEGORIAS
 # =====================================================================
@@ -229,6 +235,7 @@ $script:Snap = [ordered]@{
     Registro        = @()
     ChavesCriadas   = @()
     PlanoEnergia    = ''
+    PlanoCriado     = ''
     Defender        = [ordered]@{ ExclusoesCaminho = @(); ExclusoesProcesso = @() }
     Inicializacao   = @()
     AreaTrabalho    = @()
@@ -440,8 +447,10 @@ function Ativar {
     # ---------- 0) SNAPSHOT ----------
     Titulo "[0/9] Gravando o estado do sistema (para desfazer tudo depois)..."
     Salvar-WallpaperOriginal
-    $plano = (powercfg /getactivescheme | Select-String -Pattern '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}').Matches.Value
-    if ($plano) { $script:Snap.PlanoEnergia = $plano[0] }
+    # Matches.Value devolve uma STRING: indexar com [0] dava o primeiro CARACTERE
+    # em vez do GUID inteiro. Forca-se um array antes de indexar.
+    $planos = @((powercfg /getactivescheme | Select-String -Pattern '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}').Matches.Value)
+    if ($planos.Count -gt 0) { $script:Snap.PlanoEnergia = $planos[0] }
     try {
         $pref = Get-MpPreference -ErrorAction Stop
         $script:Snap.Defender.ExclusoesCaminho  = @($pref.ExclusionPath)
@@ -537,18 +546,24 @@ function Ativar {
     if (CAtiva 'desempenho') {
         Titulo "[5/9] Plano de energia e desempenho..."
         $maxGuid = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
-        $temMax = (powercfg /list | Out-String) -match [regex]::Escape($maxGuid)
+        # O plano "Alto desempenho" (8c5e7fda) e o plano de origem. Se ainda nao
+        # existir na lista, duplica-se e guarda-se o GUID NOVO que o Windows cria.
+        $listaPlanos = (powercfg /list | Out-String)
+        $temMax = $listaPlanos -match [regex]::Escape($maxGuid)
         if (-not $temMax) {
             if ($DryRun) { Log "energia: criaria o plano 'Desempenho Maximo'" 'DarkCyan' }
-            else { powercfg /duplicatescheme $maxGuid | Out-Null; $temMax = $true }
+            else {
+                $saida = powercfg /duplicatescheme $maxGuid 2>&1 | Out-String
+                $criado = ([regex]::Match($saida, '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}')).Value
+                if ($criado) { $maxGuid = $criado; $script:Snap.PlanoCriado = $criado; $temMax = $true }
+            }
         }
         if ($temMax -and -not $DryRun) {
-            powercfg /setactive $maxGuid | Out-Null
-            powercfg /setacvalueindex $maxGuid SUB_PROCESSOR PROCTHROTTLEMIN 100 | Out-Null
-            powercfg /setdcvalueindex $maxGuid SUB_PROCESSOR PROCTHROTTLEMIN 100 | Out-Null
-            powercfg /setacvalueindex $maxGuid SUB_PCIEXPRESS ASPM 0 | Out-Null
-            powercfg /setacvalueindex $maxGuid SUB_USB 48e6b7a6-50f5-4782-a5d4-53bb8f07e226 0 | Out-Null
-            powercfg /setactive $maxGuid | Out-Null
+            # O powercfg devolve codigo diferente de zero quando um alias nao
+            # existe. Cada comando e verificado para nao despejar erros
+            # SUB_USB nao e um alias valido: usa-se o GUID do subgrupo USB.
+            Set-Power @("/setacvalueindex", $maxGuid, "2a737441-1930-4402-8d77-b2bebba308a3", "48e6b7a6-50f5-4782-a5d4-53bb8f07e226", "0")
+            Set-Power @("/setactive", $maxGuid)
         } elseif ($DryRun) {
             Log "energia: usaria o plano 'Desempenho Maximo'" 'DarkCyan'
         }
@@ -719,7 +734,7 @@ function Desativar {
         $script:Snap = [ordered]@{
             Versao=4; Data=''; Perfil=''; Categorias=''; Restaurado=$false
             Servicos=@(); Tarefas=@(); Registro=@(); ChavesCriadas=@()
-            PlanoEnergia=''; Defender=[ordered]@{ExclusoesCaminho=@();ExclusoesProcesso=@()}
+            PlanoEnergia=''; PlanoCriado=''; Defender=[ordered]@{ExclusoesCaminho=@();ExclusoesProcesso=@()}
             Inicializacao=@(); AreaTrabalho=@(); Ifeo=@(); WallpaperOriginal=''; ProcessosMortos=@()
         }
     } else {
@@ -729,7 +744,7 @@ function Desativar {
                 Versao=$lido.Versao; Data=$lido.Data; Perfil=$lido.Perfil; Categorias=$lido.Categorias
                 Restaurado=$false
                 Servicos=@($lido.Servicos); Tarefas=@($lido.Tarefas); Registro=@($lido.Registro)
-                ChavesCriadas=@($lido.ChavesCriadas); PlanoEnergia=$lido.PlanoEnergia
+                ChavesCriadas=@($lido.ChavesCriadas); PlanoEnergia=$lido.PlanoEnergia; PlanoCriado=$lido.PlanoCriado
                 Defender=$lido.Defender; Inicializacao=@($lido.Inicializacao)
                 AreaTrabalho=@($lido.AreaTrabalho); Ifeo=@($lido.Ifeo)
                 WallpaperOriginal=$lido.WallpaperOriginal; ProcessosMortos=@($lido.ProcessosMortos)
@@ -748,8 +763,18 @@ function Desativar {
     $n = 0
     foreach ($b in (@($script:Snap.Ifeo) + $Bloqueados)) {
         if ($DryRun) { $n++; continue }
-        if (Test-Path "$ifeo\$b") { Remove-Item -Path "$ifeo\$b" -Recurse -Force -ErrorAction SilentlyContinue; $n++ }
-        Remove-ItemProperty -Path $ifeo -Name $b -Force -ErrorAction SilentlyContinue
+        if (-not $b) { continue }
+        $chave = "$ifeo\$b"
+        if (Test-Path $chave) {
+            # Remove SO o bloqueio criado pelo modo jogo (Debugger = x:\bloqueado.exe).
+            # Uma entrada IFEO que o utilizador ja tinha no mesmo exe fica intacta:
+            # antes o restauro apagava o MicrosoftEdgeUpdate.exe do sistema.
+            $dbg = (Get-ItemProperty -Path $chave -Name 'Debugger' -ErrorAction SilentlyContinue).Debugger
+            if ($dbg -eq 'x:\bloqueado.exe') {
+                Remove-Item -Path $chave -Recurse -Force -ErrorAction SilentlyContinue
+                $n++
+            }
+        }
     }
     Fez "$n bloqueios removidos"
 
@@ -809,18 +834,18 @@ function Desativar {
     if (-not $DryRun) {
         try {
             $pref = Get-MpPreference -ErrorAction Stop
-            foreach ($e in @($pref.ExclusionPath)) {
+            foreach ($e in @($pref.ExclusionPath | Where-Object { $_ -and $_.ToString().Trim() -ne '' -and $_ -notlike 'N/A*' })) {
                 if ($e -and ($script:Snap.Defender.ExclusoesCaminho -notcontains $e)) {
                     Remove-MpPreference -ExclusionPath $e -ErrorAction SilentlyContinue
                 }
             }
-            foreach ($pr in @($pref.ExclusionProcess)) {
+            foreach ($pr in @($pref.ExclusionProcess | Where-Object { $_ -and $_.ToString().Trim() -ne '' -and $_ -notlike 'N/A*' })) {
                 if ($pr -and ($script:Snap.Defender.ExclusoesProcesso -notcontains $pr)) {
                     Remove-MpPreference -ExclusionProcess $pr -ErrorAction SilentlyContinue
                 }
             }
-            foreach ($e in @($script:Snap.Defender.ExclusoesCaminho))  { Add-MpPreference -ExclusionPath $e -ErrorAction SilentlyContinue }
-            foreach ($pr in @($script:Snap.Defender.ExclusoesProcesso)) { Add-MpPreference -ExclusionProcess $pr -ErrorAction SilentlyContinue }
+            foreach ($e in @($script:Snap.Defender.ExclusoesCaminho | Where-Object { $_ -and $_.ToString().Trim() -ne '' }))  { Add-MpPreference -ExclusionPath $e -ErrorAction SilentlyContinue }
+            foreach ($pr in @($script:Snap.Defender.ExclusoesProcesso | Where-Object { $_ -and $_.ToString().Trim() -ne '' })) { Add-MpPreference -ExclusionProcess $pr -ErrorAction SilentlyContinue }
         } catch { Falhou "nao consegui mexer nas exclusoes do Defender: $($_.Exception.Message)" }
         foreach ($p in 'DisableRealtimeMonitoring','DisableBehaviorMonitoring','DisableIOAVProtection',
                        'DisableScriptScanning','DisableArchiveScanning','DisableRemovableDriveScanning') {
@@ -843,7 +868,11 @@ function Desativar {
     Titulo "[8/9] Restaurando o plano de energia..."
     if ($script:Snap.PlanoEnergia) {
         if ($DryRun) { Log "energia: voltaria ao plano $($script:Snap.PlanoEnergia)" 'DarkCyan' }
-        else { powercfg /setactive $script:Snap.PlanoEnergia | Out-Null; Fez "plano de energia original de volta" }
+        else { Set-Power @("/setactive", $script:Snap.PlanoEnergia); Fez "plano de energia original de volta" }
+    }
+    # Remove o plano "Desempenho Maximo" que o modo jogo criou (se criou).
+    if ($script:Snap.PlanoCriado -and -not $DryRun) {
+        Set-Power @("/delete", $script:Snap.PlanoCriado)
     }
 
     # --- 9) interface ---
@@ -917,5 +946,7 @@ switch ($Acao) {
     'Desativar' { Desativar }
     'Estado'    { Mostrar-Estado }
 }
+
+
 
 

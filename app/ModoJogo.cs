@@ -29,7 +29,10 @@ namespace ModoJogoApp
         // ---------- perfil ----------
         private string perfil = "nuvem";
         private bool[] catAtivas;
-        private string manterProcessos = "";
+        // Por omissao protege as ferramentas de desenvolvimento: fechar o
+        // editor a meio do trabalho perde o que estava a fazer. O campo
+        // "NAO FECHAR ESTES PROGRAMAS" na pagina PERFIS e editavel.
+        private string manterProcessos = "OpenCode,Code,RobloxStudio,devenv,obs64,StudioMCP";
 
         // ---------- contadores ----------
         private int processosAntes = 0;
@@ -908,6 +911,26 @@ namespace ModoJogoApp
             b4.Clicou += (s, e) => Executar("Desativar");
             c3.Controls.AddRange(new Control[] { lb3, b3, lb4, b4 });
             p.Controls.Add(c3);
+            p.Controls.Add(c3);
+
+            var c4 = new Cartao { Location = new Point(34, 520), Size = new Size(1002, 112) };
+            c4.Titulo("SOBRE");
+            c4.Sub("codigo aberto, sem ficheiros ocultos");
+            var lb5 = new Label
+            {
+                Text = "O aplicativo e um EXE nativo do Windows em C# (.NET Framework) que chama um script em PowerShell. " +
+                       "Tudo o que e alterado fica gravado num snapshot antes de mexer, para poder ser desfeito ao milimetro.\n\n" +
+                       "  " + DirBase + "\n" +
+                       "    ModoJogo.exe     aplicativo e interface\n" +
+                       "    ModoJogo.ps1     o motor do modo jogo (snapshot, perfis e restauro)\n" +
+                       "    wallpapers\\      as imagens\n" +
+                       "    app\\            os codigos .cs que geraram o EXE\n" +
+                       "    build.cmd        recompila tudo com um comando",
+                Font = new Font("Segoe UI", 8.5F), ForeColor = Paleta.TextoMudo, AutoSize = false,
+                Location = new Point(18, 64), Size = new Size(966, 42), BackColor = Color.Transparent
+            };
+            c4.Controls.Add(lb5);
+            p.Controls.Add(c4);
 
             return p;
         }
