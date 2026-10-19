@@ -5,17 +5,22 @@
     -Acao Ativar     [-Wallpaper <caminho>] [-Perfil nuvem|leve|personalizado]
                     [-Categorias "a,b,c"] [-BaseDir <pasta>] [-DryRun]
     -Acao Desativar  [-BaseDir <pasta>] [-DryRun]
+    -Acao Busca      [-EstadoBusca on|off] [-BaseDir <pasta>]
     -Acao Estado     [-BaseDir <pasta>]
 
     REGRAS DE OURO
-      1) Tudo que vai ser alterado e gravado em snapshot.json ANTES de alterar.
-      2) A restauracao le o snapshot e desfaz item por item.
+      1) Tudo que for alterado e gravado em snapshot.json ANTES de alterar.
+      2) A restauracao le o snapshot e desfaz item a item.
       3) Se o snapshot nao puder ser lido, NADA e alterado (falha segura).
       4) -DryRun imprime o plano sem tocar em nada.
+      5) O WebView2 NUNCA e bloqueado nem morto: e o motor da Epic, do
+         Roblox e da propria pesquisa do Windows. Bloquear = janela preta.
 #>
 param(
-    [ValidateSet('Ativar','Desativar','Estado')]
+    [ValidateSet('Ativar','Desativar','Estado','Busca')]
     [string]$Acao = 'Ativar',
+    [ValidateSet('on','off')]
+    [string]$EstadoBusca = 'on',
     [string]$Wallpaper = '',
     [ValidateSet('nuvem','leve','personalizado')]
     [string]$Perfil = 'nuvem',
@@ -124,7 +129,7 @@ function CAtiva([string]$c) { return ($Cats -contains $c) }
 $ServicosTelemetria = @(
     'DiagTrack','dmwappushservice','diagnosticshub.standardcollector.service',
     'WerSvc','WSearch','DoSvc','DusmSvc','CDPSvc','TabletInputService',
-    'UevAgentService','WbioSrvc','SensorService','TokenBroker',
+    'UevAgentService','WbioSrvc','SensorService',
     'IntelCollectorService','IntelTelemetryAgent','DSAService','DSAUpdateService',
     'SystemUsageReportSvc_QUEENCREEK','ESRV_SVC_QUEENCREEK',
     'cbdhsvc_*','whesvc','PcaSvc','RasMan','lfsvc','MapsBroker','RetailDemo',
@@ -158,8 +163,11 @@ $Essenciais = @(
     'LockApp','explorer','ShellHost','ShellExperienceHost','StartMenuExperienceHost',
     'SearchHost','SearchApp','ApplicationFrameHost','Widgets','WidgetBoard',
     'nvcontainer','nvdisplaycontainer','NVDisplay.ContainerLocalSystem',
-    'igfxCUIService','igfxtray','igfxpersistence','IntelGraphicsSoftware.Service',
-    'RadeonSoftware','AMDRSServ','amdkmdag',
+    'IntelGraphicsSoftware.Service',
+    # O WebView2 e o motor de interface da Epic, do Roblox, do Windows 11 e
+    # de todas as apps modernas. Se for morto ou bloqueado, a janela fica
+    # PRETA e a app nao funciona. NUNCA tocar nestes.
+    'msedgewebview2','msedgewebview2.exe',
     'ModoJogo','FortniteClient-Win64-Shipping','powershell','pwsh',
     'EasyAntiCheat','EasyAntiCheat_EOS','BEService','BEServiceLauncher','GameGuard',
     'GameMon.des','XignCode','nProt','GameGuard.des','EasyHook','ACGameService',
@@ -178,13 +186,13 @@ $Essenciais = @(
 
 # --- Programas bloqueados via IFEO (nao voltam sozinhos) ---
 $Bloqueados = @(
-    'msedge.exe','msedgewebview2.exe','MicrosoftEdgeUpdate.exe',
+    'msedge.exe',
     'SearchHost.exe','SearchApp.exe','StartMenuExperienceHost.exe',
     'ShellExperienceHost.exe','ApplicationFrameHost.exe',
     'OneDrive.exe','OneDrive.Sync.Service.exe','Dropbox.exe',
     'SearchIndexer.exe','SearchProtocolHost.exe','SearchFilterHost.exe',
     'Widgets.exe','WidgetService.exe','WidgetBoard.exe','Copilot.exe','mscopilot.exe',
-    'MicrosoftEdgeWebView2.exe','AADPluginHost.exe','Microsoft.AAD.BrokerPlugin',
+    'AADPluginHost.exe','Microsoft.AAD.BrokerPlugin',
     'PhoneExperienceHost.exe','YourPhone.exe','MicrosoftTeams.exe','ms-teams.exe',
     'Teams.exe','MicrosoftMaps.exe','Weather.exe','FeedbackHub.exe',
     'GetHelp.exe','MicrosoftSolitaireCollection.exe','StickyNotes.exe',
@@ -708,7 +716,7 @@ $MatarSempre = @(
     'IntelGraphicsSoftware.Service.Graphics','IntelCpHDCPSvc',
     'gamingservices','gamingservicesnet','PresentMonService','PresentMonSharedService',
     'mscopilot','Copilot','MicrosoftTeams','ms-teams','Teams',
-    'OneDrive','OneDrive.Sync.Service','Dropbox','SearchIndexer','SearchProtocolHost',
+    'OneDrive','OneDrive.Sync.Service','Dropbox','SearchIndexer','SearchProtocolHost','SearchFilterHost',
     'SearchFilterHost','MicrosoftStartFeedProvider','WidgetService','WidgetBoard','Widgets',
     'CrossDeviceService','CrossDeviceResume','UserOOBEBroker','AQAUserPS','ACCUserPS',
     'WUDFHost','WpcMon','SystemSettings','MpDefenderCoreService','MpCmdRun',
@@ -920,6 +928,132 @@ function Desativar {
 }
 
 # =====================================================================
+#  PESQUISA DO WINDOWS - desativar SEMPRE (independente do modo jogo)
+#  Tem o seu proprio snapshot, para o MODO NORMAL nao mexer aqui.
+# =====================================================================
+$ArquivoBusca = "$Estado\busca.json"
+$IfeoBusca = @('SearchHost.exe','SearchApp.exe','SearchFilterHost.exe','SearchProtocolHost.exe','SearchIndexer.exe')
+$RegBusca = @(
+    @{ Caminho = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search';              Nome = 'SearchboxTaskbarMode' }
+    @{ Caminho = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search';              Nome = 'SearchboxTaskbarModeCache' }
+    @{ Caminho = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced';  Nome = 'TaskbarSearchbox' }
+    @{ Caminho = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search';           Nome = 'AllowCortana' }
+    @{ Caminho = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search';           Nome = 'DisableWebSearch' }
+    @{ Caminho = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search';           Nome = 'ConnectedSearchUseWeb' }
+)
+
+function Busca([string]$est) {
+    Clear-Host
+    Write-Host ""
+    Write-Host "   PESQUISA DO WINDOWS" -ForegroundColor Cyan
+    Write-Host "  ============================================================" -ForegroundColor DarkGray
+    $ifeo = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options'
+
+    if ($est -eq 'on') {
+        # --- guardar o estado atual ---
+        $reg = @()
+        foreach ($r in $RegBusca) {
+            $existe = $false; $valor = $null; $tipo = 'DWord'
+            $item = Get-Item -Path $r.Caminho -ErrorAction SilentlyContinue
+            if ($item) {
+                $v = $item.GetValue($r.Nome, $null)
+                if ($null -ne $v) { $existe = $true; $valor = $v; try { $tipo = $item.GetValueKind($r.Nome).ToString() } catch { } }
+            }
+            $reg += [pscustomobject]@{ Caminho = $r.Caminho; Nome = $r.Nome; Existia = $existe; Valor = $valor; Tipo = $tipo }
+        }
+        $ifeoAtual = @()
+        foreach ($b in $IfeoBusca) {
+            $chave = "$ifeo\$b"
+            if (Test-Path $chave) {
+                $dbg = (Get-ItemProperty -Path $chave -Name 'Debugger' -ErrorAction SilentlyContinue).Debugger
+                if ($dbg -eq 'x:\bloqueado.exe') { $ifeoAtual += $b }
+            }
+        }
+        Set-Content -Path $ArquivoBusca -Value (@{ Registo = $reg; Ifeo = $ifeoAtual; Data = (Get-Date).ToString('o') } | ConvertTo-Json -Depth 6) -Encoding UTF8
+
+        # --- esconder a caixa de pesquisa da barra de tarefas ---
+        if (-not (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search')) { New-Item 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' -Force | Out-Null }
+        Set-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' -Name 'SearchboxTaskbarMode' -Value 2 -Type DWord -Force
+        # o shell le o CACHE, nao o valor principal
+        Set-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' -Name 'SearchboxTaskbarModeCache' -Value 2 -Type DWord -Force
+        Set-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name 'TaskbarSearchbox' -Value 0 -Type DWord -Force
+        if (-not (Test-Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search')) { New-Item 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search' -Force | Out-Null }
+        Set-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search' -Name 'AllowCortana' -Value 0 -Type DWord -Force
+        Set-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search' -Name 'DisableWebSearch' -Value 1 -Type DWord -Force
+        Set-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search' -Name 'ConnectedSearchUseWeb' -Value 0 -Type DWord -Force
+
+        # --- bloquear e matar a pesquisa ---
+        $n = 0
+        foreach ($b in $IfeoBusca) {
+            $chave = "$ifeo\$b"
+            if (-not (Test-Path $chave)) { New-Item -Path $chave -Force | Out-Null }
+            Set-ItemProperty -Path $chave -Name 'Debugger' -Value 'x:\bloqueado.exe' -Type String
+            $n++
+        }
+        $mortos = 0
+        foreach ($p in @(Get-Process -Name 'SearchHost','SearchApp','SearchIndexer','SearchProtocolHost','SearchFilterHost' -ErrorAction SilentlyContinue)) {
+            try { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue; $mortos++ } catch { }
+        }
+        # O shell so relê a definicao quando o Explorer reinicia. Sem isto a
+        # caixa "Pesquisar" continua na barra de tarefas.
+        $explorer = Get-Process -Name explorer -ErrorAction SilentlyContinue
+        if ($explorer) {
+            foreach ($e in $explorer) { try { $e.Kill() } catch { } }
+            Start-Sleep -Seconds 4
+            if (-not (Get-Process -Name explorer -ErrorAction SilentlyContinue)) { Start-Process explorer.exe }
+            Start-Sleep -Seconds 4
+        }
+
+        # O Explorer ao arrancar relanca a pesquisa. Mata-la outra vez.
+        foreach ($p in @(Get-Process -Name 'SearchHost','SearchApp','SearchIndexer','SearchProtocolHost','SearchFilterHost' -ErrorAction SilentlyContinue)) {
+            try { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue } catch { }
+        }
+        Write-Host "  Pesquisa do Windows DESATIVADA" -ForegroundColor Green
+        Write-Host "    $n programas bloqueados | $mortos processos fechados" -ForegroundColor Gray
+        Write-Host "    A barra de tarefas deixa de mostrar a caixa 'Pesquisar'." -ForegroundColor Gray
+        Write-Host "    Para repor: o botao na pagina AJUSTES do app." -ForegroundColor DarkGray
+    }
+    else {
+        if (-not (Test-Path $ArquivoBusca)) {
+            Write-Host "  A pesquisa nunca foi desactivada por este app." -ForegroundColor Yellow
+            return
+        }
+        $s = Get-Content $ArquivoBusca -Raw -Encoding UTF8 | ConvertFrom-Json
+        foreach ($r in @($s.Registo)) {
+        # A caixa larga de pesquisa so volta com um sign-out (quiria do shell).
+        # O modo 1 devolve o botao de lupa, que funciona igual e e o que se
+        # consegue restaurar de forma confiavel.
+        Set-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' -Name 'SearchboxTaskbarMode' -Value 1 -Type DWord -Force
+        Set-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' -Name 'SearchboxTaskbarModeCache' -Value 1 -Type DWord -Force
+        foreach ($r in @($s.Registo)) {
+            if ($r.Nome -like 'SearchboxTaskbarMode*') { continue }
+                if (-not (Test-Path $r.Caminho)) { New-Item -Path $r.Caminho -Force | Out-Null }
+                New-ItemProperty -Path $r.Caminho -Name $r.Nome -Value $r.Valor -PropertyType $r.Tipo -Force -ErrorAction SilentlyContinue | Out-Null
+            } else {
+                Remove-ItemProperty -Path $r.Caminho -Name $r.Nome -Force -ErrorAction SilentlyContinue
+            }
+        }
+        foreach ($b in @($s.Ifeo)) {
+            $chave = "$ifeo\$b"
+            if (Test-Path $chave) {
+                $dbg = (Get-ItemProperty -Path $chave -Name 'Debugger' -ErrorAction SilentlyContinue).Debugger
+                if ($dbg -eq 'x:\bloqueado.exe') { Remove-Item -Path $chave -Recurse -Force -ErrorAction SilentlyContinue }
+            }
+        }
+        Remove-Item $ArquivoBusca -Force -ErrorAction SilentlyContinue
+        $explorer = Get-Process -Name explorer -ErrorAction SilentlyContinue
+        if ($explorer) {
+            foreach ($e in $explorer) { try { $e.Kill() } catch { } }
+            Start-Sleep -Seconds 4
+            if (-not (Get-Process -Name explorer -ErrorAction SilentlyContinue)) { Start-Process explorer.exe }
+            Start-Sleep -Seconds 3
+        }
+        Write-Host "  Pesquisa do Windows REPOSTA" -ForegroundColor Green
+    }
+    Write-Host "  ============================================================" -ForegroundColor DarkGray
+    Write-Host ""
+}
+# =====================================================================
 #  ESTADO
 # =====================================================================
 function Mostrar-Estado {
@@ -945,7 +1079,13 @@ switch ($Acao) {
     'Ativar'    { Ativar }
     'Desativar' { Desativar }
     'Estado'    { Mostrar-Estado }
+    'Busca'     { Busca $EstadoBusca }
 }
+
+
+
+
+
 
 
 

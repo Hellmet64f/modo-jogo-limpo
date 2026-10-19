@@ -52,12 +52,15 @@ namespace ModoJogoApp
         private Cartao cartaoJogo, cartaoNormal, cartaoRecursos, cartaoPasta, cartaoStatus, cartaoBloco;
         private Cartao[] cartoesPerfil;
         private Caixa[] caixas;
-        private Botao btnReparar;
+        private Botao btnReparar, btnBusca;
+        private Botao btnBuscaDefs;
+        private Label lblBusca;
         private PerformanceCounter pcCpu = null;
         private Microsoft.VisualBasic.Devices.ComputerInfo info = new Microsoft.VisualBasic.Devices.ComputerInfo();
 
         private System.Windows.Forms.Timer timer;
         private System.Windows.Forms.Timer timerExec;
+        private System.Windows.Forms.Timer timerBusca;
         private Process procExec;
         private int linhasLidas = 0;
         private DateTime inicioExec;
@@ -185,6 +188,13 @@ namespace ModoJogoApp
 
             timerExec = new System.Windows.Forms.Timer { Interval = 400 };
             timerExec.Tick += (s, e) => Acompanhar();
+
+            // Vigia a pesquisa do Windows. O SearchHost e um app UWP: o IFEO
+            // nao se aplica a ele e o shell relanca-o sempre. Este temporizador
+            // garante que nunca volta a acumular os ~160 MB.
+            timerBusca = new System.Windows.Forms.Timer { Interval = 2000 };
+            timerBusca.Tick += (s, e) => VigiarPesquisa();
+            timerBusca.Start();
 
             hk = new HotkeyWindow(this);
             // Ctrl+Alt+M volta ao normal. Ctrl+Alt+G ativa o modo jogo.
@@ -890,49 +900,139 @@ namespace ModoJogoApp
             c2.Controls.AddRange(new Control[] { pv1, pv2, lbw });
             p.Controls.Add(c2);
 
-            var c3 = new Cartao { Location = new Point(34, 316), Size = new Size(1002, 188) };
-            c3.Titulo("MANUTENCAO");
-            c3.Sub("opcoes que alteram o sistema");
+            // --- PESQUISA DO WINDOWS ---
+            var c3 = new Cartao { Location = new Point(34, 316), Size = new Size(492, 200) };
+            c3.Titulo("PESQUISA DO WINDOWS");
+            c3.Sub("desativa sempre, fora e dentro do modo jogo");
             var lb3 = new Label
+            {
+                Text = "Tira a caixa \"Pesquisar\" da barra de tarefas, bloqueia o\n" +
+                       "SearchHost e o indexador. Poupa cerca de 75 a 160 MB.\n\n" +
+                       "Esta opcao e independente: o MODO NORMAL nao a desfaz.\n" +
+                       "No Windows 11 a caixa da barra de tarefas so some pelas Definicoes.",
+                Location = new Point(18, 68), Size = new Size(456, 62), BackColor = Color.Transparent
+            };
+            btnBusca = new Botao { Texto = "", Location = new Point(18, 140), Size = new Size(250, 34) };
+            btnBusca.Clicou += (s, e) => ExecutarBusca();
+            lblBusca = new Label
+            {
+                Text = "", Font = new Font("Segoe UI", 8.5F, FontStyle.Bold), ForeColor = Paleta.TextoFraco,
+                AutoSize = false, Location = new Point(280, 148), Size = new Size(196, 22), BackColor = Color.Transparent
+            };
+            btnBuscaDefs = new Botao { Texto = "Definicoes da barra de tarefas...", Location = new Point(18, 160), Size = new Size(250, 30), CorFundo = Paleta.CartaoHover, CorHover = Paleta.Cartao };
+            btnBuscaDefs.Clicou += (s, e) => AbrirDefinicoesTaskbar();
+            c3.Controls.AddRange(new Control[] { lb3, btnBusca, lblBusca, btnBuscaDefs });
+            p.Controls.Add(c3);
+
+            // --- MANUTENCAO ---
+            var c4 = new Cartao { Location = new Point(542, 316), Size = new Size(494, 200) };
+            c4.Titulo("MANUTENCAO");
+            c4.Sub("opcoes que alteram o sistema");
+            var lb4 = new Label
             {
                 Text = "Desinstalar o pacote do menu Iniciar\nSome o StartMenuExperienceHost (cerca de 130 MB). Custo: o menu Iniciar para de funcionar ate o Windows recadastrar o pacote.",
                 Font = new Font("Segoe UI", 8.5F), ForeColor = Paleta.TextoMudo, AutoSize = false,
-                Location = new Point(18, 72), Size = new Size(700, 44), BackColor = Color.Transparent
+                Location = new Point(18, 68), Size = new Size(300, 44), BackColor = Color.Transparent
             };
-            var b3 = new Botao { Texto = "Remover / reinstalar pacote", Location = new Point(742, 74), Size = new Size(226, 32), CorFundo = Paleta.CartaoHover, CorHover = Paleta.Cartao };
-            b3.Clicou += (s, e) => AlternarAppX();
-            var lb4 = new Label
+            var b4 = new Botao { Texto = "Remover / reinstalar", Location = new Point(326, 70), Size = new Size(150, 32), CorFundo = Paleta.CartaoHover, CorHover = Paleta.Cartao };
+            b4.Clicou += (s, e) => AlternarAppX();
+            var lb5 = new Label
             {
                 Text = "Restaurar tudo agora\nDesfaz bloqueios, religa servicos, tarefas, registo, energia, area de trabalho e wallpaper. O botao MODO NORMAL faz o mesmo.",
                 Font = new Font("Segoe UI", 8.5F), ForeColor = Paleta.TextoMudo, AutoSize = false,
-                Location = new Point(18, 132), Size = new Size(700, 40), BackColor = Color.Transparent
+                Location = new Point(18, 126), Size = new Size(300, 40), BackColor = Color.Transparent
             };
-            var b4 = new Botao { Texto = "Restaurar agora", Location = new Point(742, 134), Size = new Size(226, 32) };
-            b4.Clicou += (s, e) => Executar("Desativar");
-            c3.Controls.AddRange(new Control[] { lb3, b3, lb4, b4 });
-            p.Controls.Add(c3);
-            p.Controls.Add(c3);
+            var b5 = new Botao { Texto = "Restaurar agora", Location = new Point(326, 128), Size = new Size(150, 32) };
+            b5.Clicou += (s, e) => Executar("Desativar");
+            c4.Controls.AddRange(new Control[] { lb4, b4, lb5, b5 });
+            p.Controls.Add(c4);
 
-            var c4 = new Cartao { Location = new Point(34, 520), Size = new Size(1002, 112) };
-            c4.Titulo("SOBRE");
-            c4.Sub("codigo aberto, sem ficheiros ocultos");
-            var lb5 = new Label
+            var c5 = new Cartao { Location = new Point(34, 532), Size = new Size(1002, 108) };
+            c5.Titulo("SOBRE");
+            c5.Sub("codigo aberto, sem ficheiros ocultos");
+            var lb6 = new Label
             {
                 Text = "O aplicativo e um EXE nativo do Windows em C# (.NET Framework) que chama um script em PowerShell. " +
                        "Tudo o que e alterado fica gravado num snapshot antes de mexer, para poder ser desfeito ao milimetro.\n\n" +
-                       "  " + DirBase + "\n" +
-                       "    ModoJogo.exe     aplicativo e interface\n" +
-                       "    ModoJogo.ps1     o motor do modo jogo (snapshot, perfis e restauro)\n" +
-                       "    wallpapers\\      as imagens\n" +
-                       "    app\\            os codigos .cs que geraram o EXE\n" +
-                       "    build.cmd        recompila tudo com um comando",
+                       "  " + DirBase + "\\n" +
+                       "    ModoJogo.exe     aplicativo e interface       ModoJogo.ps1   o motor (snapshot, perfis, restauro)\n" +
+                       "    app\\            os codigos .cs               build.cmd      recompila tudo com um comando",
                 Font = new Font("Segoe UI", 8.5F), ForeColor = Paleta.TextoMudo, AutoSize = false,
-                Location = new Point(18, 64), Size = new Size(966, 42), BackColor = Color.Transparent
+                Location = new Point(18, 64), Size = new Size(966, 40), BackColor = Color.Transparent
             };
-            c4.Controls.Add(lb5);
-            p.Controls.Add(c4);
+            c5.Controls.Add(lb6);
+            p.Controls.Add(c5);
 
+            AtualizarBotaoBusca();
             return p;
+        }
+
+        // O botao da pesquisa mostra sempre o estado real (le o busca.json).
+        private void AtualizarBotaoBusca()
+        {
+            if (btnBusca == null) return;
+            bool off = File.Exists(Path.Combine(EstadoDir, "busca.json"));
+            btnBusca.Texto = off ? "REPOR A PESQUISA" : "DESATIVAR A PESQUISA";
+            btnBusca.CorFundo = off ? Paleta.CartaoHover : Paleta.Roxo;
+            btnBusca.CorHover = off ? Paleta.Cartao : Paleta.RoxoClaro;
+            if (lblBusca != null)
+            {
+                lblBusca.Text = off ? "DESATIVADA" : "ATIVA (gasta ~75 MB)";
+                lblBusca.ForeColor = off ? Paleta.Verde : Paleta.Laranja;
+            }
+        }
+
+        // O Windows 11 24H2 guarda a caixa "Pesquisar" da barra de tarefas num
+        // sitio que o registo nao controla. A unica forma garantida e pela
+        // propria pagina de Definicoes - por isso abrimos essa pagina.
+        private void AbrirDefinicoesTaskbar()
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo("ms-settings:taskbar") { UseShellExecute = true });
+                Anexar("Aberto: Definicoes > Barra de tarefas > Itens da barra de tarefas > Pesquisar > Desligar");
+            }
+            catch (Exception ex) { Anexar("Nao consegui abrir as Definicoes: " + ex.Message); }
+        }
+
+        private void ExecutarBusca()
+        {
+            if (rodando) return;
+            if (!File.Exists(scriptCaminho)) { Anexar("Script nao encontrado: " + scriptCaminho); return; }
+            bool off = File.Exists(Path.Combine(EstadoDir, "busca.json"));
+            string estado = off ? "off" : "on";
+
+            acaoAtual = "Busca";
+            rodando = true;
+            txtLog.Clear();
+            linhasLidas = 0;
+            inicioExec = DateTime.Now;
+            lblStatus.Text = off ? "A repor a pesquisa do Windows..." : "A desativar a pesquisa do Windows...";
+            lblStatus.ForeColor = Paleta.Laranja;
+            AtualizarBotoes(File.Exists(arquivoEstado));
+
+            try { if (File.Exists(arquivoSaida)) File.Delete(arquivoSaida); } catch { }
+            string cmdLine = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"" +
+                             scriptCaminho + "\" -Acao Busca -EstadoBusca " + estado +
+                             " -BaseDir \"" + DirBase + "\"";
+            try
+            {
+                var psi = new ProcessStartInfo("cmd.exe", "/c " + cmdLine + " > \"" + arquivoSaida + "\" 2>&1")
+                {
+                    UseShellExecute = true, Verb = "runas", WindowStyle = ProcessWindowStyle.Hidden
+                };
+                procExec = new Process { StartInfo = psi };
+                procExec.Start();
+                timerExec.Start();
+            }
+            catch (Exception ex)
+            {
+                rodando = false;
+                lblStatus.Text = "Falhou: " + ex.Message;
+                lblStatus.ForeColor = Paleta.Vermelho;
+                Anexar("ERRO: " + ex.Message);
+                AtualizarEstado();
+            }
         }
 
         // Carrega a imagem SEM deixar o ficheiro bloqueado.
@@ -1155,6 +1255,7 @@ namespace ModoJogoApp
                 lblStatus.Text = "Script nao encontrado."; lblStatus.ForeColor = Paleta.Vermelho;
                 return;
             }
+            acaoAtual = acao;
 
             if (acao == "Ativar") ConfirmarAtivacao();
 
@@ -1242,6 +1343,31 @@ namespace ModoJogoApp
 
         // Le o log enquanto o script corre: o registo aparece linha a linha
         // em vez de tudo de uma vez no fim.
+        private static readonly string[] ProcessosPesquisa = {
+            "SearchHost", "SearchApp", "SearchIndexer", "SearchProtocolHost", "SearchFilterHost"
+        };
+
+        // Mata a pesquisa quando o modo jogo esta ligado ou quando a pesquisa
+        // foi desactivada de proposito. Fora dessas condicoes nao se mexe.
+        private void VigiarPesquisa()
+        {
+            try
+            {
+                bool modoJogo = File.Exists(arquivoEstado);
+                bool pesquisaOff = File.Exists(Path.Combine(EstadoDir, "busca.json"));
+                if (!modoJogo && !pesquisaOff) return;
+                foreach (var p in Process.GetProcesses())
+                {
+                    try
+                    {
+                        if (Array.IndexOf(ProcessosPesquisa, p.ProcessName) >= 0) p.Kill();
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
         private void Acompanhar()
         {
             LerLinhasNovas();
@@ -1287,6 +1413,24 @@ namespace ModoJogoApp
             catch { }
 
             double dur = (DateTime.Now - inicioExec).TotalSeconds;
+            if (acao == "Busca")
+            {
+                AtualizarBotaoBusca();
+                if (ok)
+                {
+                    bool desativada = File.Exists(Path.Combine(EstadoDir, "busca.json"));
+                    lblStatus.Text = desativada ? "Pesquisa do Windows desativada. Poupa cerca de 75 MB." : "Pesquisa do Windows reposta.";
+                    lblStatus.ForeColor = desativada ? Paleta.Verde : Paleta.Azul;
+                }
+                else
+                {
+                    lblStatus.Text = "Nao consegui mudar a pesquisa. Veja o registo.";
+                    lblStatus.ForeColor = Paleta.Vermelho;
+                }
+                Anexar("--- PESQUISA em " + Math.Round(dur) + "s ---");
+                AtualizarEstado();
+                return;
+            }
             if (acao == "Ativar")
             {
                 if (ok)
@@ -1335,6 +1479,7 @@ namespace ModoJogoApp
         }
     }
 }
+
 
 
 

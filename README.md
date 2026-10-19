@@ -12,8 +12,6 @@ do sistema a correr. E volta **exatamente** ao estado anterior.
   accao (antes ficava morto - bug corrigido).
 - Atalho de emergencia: **Ctrl+Alt+M** volta ao normal a qualquer momento.
   **Ctrl+Alt+G** ativa o modo jogo.
-- **REPARAR** (separador ESTADO) volta a restaurar tudo, mesmo que algo tenha
-  ficado para tras.
 
 ## Separadores
 
@@ -22,7 +20,24 @@ do sistema a correr. E volta **exatamente** ao estado anterior.
 | PAINEL | Liga/desliga, medidores RAM e CPU, contador de processos ao vivo, registo em tempo real |
 | PERFIS | Nuvem (GeForce Now) / Leve / Personalizado, categoria por categoria, lista de programas a nao fechar |
 | ESTADO | O que foi desligado (lido do snapshot) e o que o sistema esta a fazer agora, com botao REPARAR |
-| AJUSTES | Pasta do app, wallpaper, manutencao e sobre |
+| AJUSTES | Pasta do app, wallpaper, **pesquisa do Windows** e manutencao |
+
+## A pesquisa do Windows
+
+O botao **DESATIVAR A PESQUISA** na pagina AJUSTES:
+
+- esconde a caixa "Pesquisar" da barra de tarefas
+- bloqueia o SearchHost, o SearchApp e o indexador (nunca mais arrancam)
+- desliga a Cortana, a pesquisa na web e a pesquisa na nuvem
+- o app mantem um vigilante que fecha a pesquisa de 2 em 2 segundos, porque o
+  Windows e um app UWP e volta a arranca-lo sozinho (poupa 75 a 160 MB)
+
+**Nota honesta:** no Windows 11 24H2 a caixa "Pesquisar" da barra de tarefas e
+guardada pelo shell num sitio que o registo nao controla. Por isso o botao
+**Definicoes da barra de tarefas...** abre a pagina certa do Windows
+(Definicoes > Barra de tarefas > Itens da barra de tarefas > Pesquisar >
+Desligar) - e o unico jeito garantido de a tirar de vista. Durante o MODO JOGO
+isso nao se ve porque a barra de tarefas esta escondida.
 
 ## Como garantir que volta tudo
 
@@ -37,11 +52,24 @@ lido, **nada e alterado**.
 `-DryRun` imprime o plano completo sem tocar em nada - use para ver o que
 seria feito.
 
+## Regras que nunca sao quebradas
+
+O script **nao toca** em:
+
+- o **WebView2** (`msedgewebview2.exe`) - e o motor de interface da Epic, do
+  Roblox e da propria pesquisa do Windows. Bloquear ou matar o WebView2 deixa a
+  janela da Epic **preta** e a app nao funciona. (Ja aconteceu, esta corrigido.)
+- o driver de video, o audio e a rede
+- o Explorador (e ele que desenha o wallpaper)
+- o anti-cheat, o launcher e o jogo
+- os servicos termicos do Acer (Care Center e Experience Zone)
+- o TokenBroker, que e o login Microsoft usado pela Epic e pela Store
+
 ## Ficheiros
 
 ```
 ModoJogo.exe     aplicativo e interface
-ModoJogo.ps1     o motor (snapshot, perfis, restauro)
+ModoJogo.ps1     o motor (snapshot, perfis, restauro, pesquisa)
 build.cmd        recompila os .cs para o .exe
 app\             os codigos .cs que geraram o EXE
 wallpapers\      as imagens
@@ -66,9 +94,3 @@ Precisa do .NET Framework 4.x (o `csc.exe` ja vem com ele).
 ```
 ModoJogo.exe --pagina=perfis     abre direto num separador
 ```
-
-## Estado do sistema
-
-O script **nao toca** em: driver de video, audio, rede, Explorador, anti-cheat,
-o proprio app, nem no launcher do jogo. Os servicos termicos do Acer
-(Care Center e Experience Zone) tambem ficam de fora.
