@@ -224,6 +224,15 @@ namespace ModoJogoApp
             AtualizarEstado();
         }
 
+        // Atalho de teclado SEM depender do RegisterHotKey: funciona quando a
+        // app tem o foco, mesmo que outra aplicacao ja use a combinacao.
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == (Keys.Control | Keys.Alt | Keys.J)) { RestaurarApp(); Executar("Ativar"); return true; }
+            if (keyData == (Keys.Control | Keys.Alt | Keys.M)) { RestaurarApp(); Executar("Desativar"); return true; }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
         protected override void OnActivated(EventArgs e)
         {
             base.OnActivated(e);
