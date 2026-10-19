@@ -11,7 +11,7 @@ do sistema a correr. E volta **exatamente** ao estado anterior.
 - **MODO NORMAL**: devolve tudo. O botao esta sempre disponivel depois de uma
   accao (antes ficava morto - bug corrigido).
 - Atalho de emergencia: **Ctrl+Alt+M** volta ao normal a qualquer momento.
-  **Ctrl+Alt+G** ativa o modo jogo.
+  **Ctrl+Alt+J** ativa o modo jogo (o G colidia com atalhos de outras apps).
 
 ## Separadores
 
@@ -110,3 +110,4 @@ ModoJogo.exe --pagina=perfis     abre direto num separador
 - **Anti-cheat sempre protegido**: Easy Anti-Cheat, BattlEye, GameGuard,
   XignCode, nProtect e Valve Anti-Cheat nunca sao fechados nem bloqueados.
   Se um destes for morto, o jogo da erro e nao arranca.
+

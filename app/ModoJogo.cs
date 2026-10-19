@@ -161,7 +161,7 @@ namespace ModoJogoApp
             }
 
             Text = "Modo Jogo Limpo";
-            ClientSize = new Size(1160, 700);
+            ClientSize = new Size(1160, 770);
             MinimumSize = new Size(1000, 620);
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Paleta.FundoA;
@@ -204,8 +204,13 @@ namespace ModoJogoApp
 
             hk = new HotkeyWindow(this);
             // Ctrl+Alt+M volta ao normal. Ctrl+Alt+G ativa o modo jogo.
-            RegisterHotKey(hk.Handle, 1, 0x0002 | 0x0001 | 0x4000, (uint)Keys.M);
-            RegisterHotKey(hk.Handle, 2, 0x0002 | 0x0001 | 0x4000, (uint)Keys.G);
+            // Ctrl+Alt+M volta ao normal (emergencia). Ctrl+Alt+J ativa o modo jogo.
+            // O G foi evitado: colidia com atalhos de outras aplicacoes.
+            if (!RegisterHotKey(hk.Handle, 1, 0x0002 | 0x0001 | 0x4000, (uint)Keys.M))
+                Anexar("ATENCAO: o atalho Ctrl+Alt+M nao foi registado (outra app usa-o)");
+            if (!RegisterHotKey(hk.Handle, 2, 0x0002 | 0x0001 | 0x4000, (uint)Keys.J))
+                Anexar("ATENCAO: o atalho Ctrl+Alt+J nao foi registado (outra app usa-o)");
+            RegisterHotKey(hk.Handle, 2, 0x0002 | 0x0001 | 0x4000, (uint)Keys.J);
             FormClosed += (s, e) =>
             {
                 UnregisterHotKey(hk.Handle, 1);
@@ -568,7 +573,7 @@ namespace ModoJogoApp
             p.Controls.Add(cCat);
 
             // --- manter processos ---
-            var cManter = new Cartao { Location = new Point(34, 544), Size = new Size(1002, 96) };
+            var cManter = new Cartao { Location = new Point(34, 544), Size = new Size(1002, 190) };
             cManter.Titulo("NAO FECHAR ESTES PROGRAMAS");
             cManter.Sub("separa por virgula - o resto e fechado");
             txtManter = new TextBox
@@ -591,14 +596,14 @@ namespace ModoJogoApp
             {
                 Texto = "Vigilante: fechar automaticamente em segundo plano",
                 Detalhe = "mantem o PC limpo enquanto o modo jogo estiver ligado",
-                Marcada = true, Location = new Point(20, 250), Size = new Size(480, 28)
+                Marcada = true, Location = new Point(20, 96), Size = new Size(480, 28)
             };
             caixaVigilante.Mudou += (s, e) => { opcaoVigilante = caixaVigilante.Marcada; };
             caixaConfirmar = new Caixa
             {
                 Texto = "Pedir confirmacao antes de fechar programas",
                 Detalhe = "desliga para o modo jogo com um atalho, sem dialogo",
-                Marcada = true, Location = new Point(20, 282), Size = new Size(480, 28)
+                Marcada = true, Location = new Point(20, 132), Size = new Size(480, 28)
             };
             caixaConfirmar.Mudou += (s, e) => { opcaoConfirmar = caixaConfirmar.Marcada; };
             cManter.Controls.AddRange(new Control[] { txtManter, lbManter, caixaVigilante, caixaConfirmar });
