@@ -152,6 +152,22 @@ $ServicosPeso = @(
 )
 
 # --- Processos que NUNCA podem ser mortos ---
+# =====================================================================
+#  ANTI-CHEAT - nunca sao fechados nem bloqueados
+#  Easy Anti-Cheat, BattlEye, GameGuard, XignCode, nProtect, Valve, etc.
+#  Se um destes for morto, o jogo da erro na hora de ligar e nao arranca.
+# =====================================================================
+$AntiCheat = @(
+    'EasyAntiCheat','EasyAntiCheat_EOS','EasyAntiCheat_Easy' ,
+    'BEService','BEServiceLauncher','BEServer' ,
+    'GameGuard','GameGuard.des','GameMon.des','GGGuard',
+    'XignCode','x64check','x32check','Wellbia' ,
+    'nProt','nPProt','GameGuard.erl',
+    'EasyHook','ACGameService','AntiCheatExpert','start_protected_game',
+    'vgc','vgc64','Equ8','GameAntiCheat','ACE' ,
+    'FortniteClient-Win64-Shipping','EpicGamesLauncher','EpicWebHelper','EpicOnlineServices'
+)
+
 $Essenciais = @(
     'System','Idle','Registry','Memory Compression','Secure System','smss','csrss',
     'wininit','winlogon','services','lsass','lsm','svchost','dwm','fontdrvhost',
@@ -321,6 +337,15 @@ function Remover-Reg([string]$caminho, [string]$nome) {
     Add-Reg $caminho $nome
     if ($DryRun) { Log "registo: removeria $caminho\$nome" 'DarkCyan'; return }
     Remove-ItemProperty -Path $caminho -Name $nome -Force -ErrorAction SilentlyContinue
+}
+
+# Devolve $false para servicos de anti-cheat: nunca podem ser parados.
+function Pode-Parar-Servico([string]$nome) {
+    if ($AntiCheat -contains $nome) { return $false }
+    if ($nome -like '*AntiCheat*') { return $false }
+    if ($nome -eq 'BEService' -or $nome -eq 'vgc' -or $nome -eq 'vgk' -or $nome -like '*GameGuard*') { return $false }
+    if ($nome -like '*EasyAntiCheat*') { return $false }
+    return $true
 }
 
 function Parar-Servico([string]$nome, [string]$startMode = 'Disabled') {
@@ -504,7 +529,7 @@ function Ativar {
         $n = 0
         foreach ($s in $ServicosTelemetria) {
             foreach ($real in @(Get-Service $s -ErrorAction SilentlyContinue)) {
-                if (Add-Servico $real.Name) { Parar-Servico $real.Name 'Disabled'; $n++ }
+                            if (Add-Servico $real.Name) { if (Pode-Parar-Servico $real.Name) { Parar-Servico $real.Name 'Disabled'; $n++ } }
             }
         }
         $nt = 0
@@ -534,7 +559,7 @@ function Ativar {
         Titulo "[3/9] Pausando o Windows Update..."
         $n = 0
         foreach ($s in $ServicosUpdate) {
-            if (Add-Servico $s) { Parar-Servico $s 'Manual'; $n++ }
+                        if (Add-Servico $s) { if (Pode-Parar-Servico $s) { Parar-Servico $s 'Manual'; $n++ } }
         }
         Fez "$n servico(s) do Update pausados (voltam com o estado original no MODO NORMAL)"
     }
@@ -638,7 +663,7 @@ function Ativar {
         foreach ($s in $ServicosPeso) {
             foreach ($real in @(Get-Service $s -ErrorAction SilentlyContinue)) {
                 if ($real.Status -eq 'Running') {
-                    if (Add-Servico $real.Name) { Parar-Servico $real.Name 'Manual'; $nPeso++ }
+                            if (Add-Servico $real.Name) { if (Pode-Parar-Servico $real.Name) { Parar-Servico $real.Name 'Disabled'; $n++ } }
                 }
             }
         }
@@ -684,6 +709,8 @@ function Matar-Processos {
     foreach ($p in @(Get-Process -ErrorAction SilentlyContinue)) {
         $n = $p.ProcessName
         if ($Essenciais -contains $n) { continue }
+        # Anti-cheat: JAMAIS. Se for morto, o jogo nao arranca.
+        if ($AntiCheat -contains $n) { continue }
         if ($Manter -and ($Manter -split ',' | ForEach-Object { $_.Trim() }) -contains $n) { continue }
         $eServico = $false
         if ($svcPids.ContainsKey([int]$p.Id)) { $eServico = $true }

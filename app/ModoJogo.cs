@@ -33,6 +33,9 @@ namespace ModoJogoApp
         // editor a meio do trabalho perde o que estava a fazer. O campo
         // "NAO FECHAR ESTES PROGRAMAS" na pagina PERFIS e editavel.
         private string manterProcessos = "OpenCode,Code,RobloxStudio,devenv,obs64,StudioMCP";
+        private bool opcaoVigiarBarra = true;
+        private Caixa caixaVigilante;
+        private bool opcaoVigilante = true;
 
         // ---------- contadores ----------
         private int processosAntes = 0;
@@ -70,6 +73,7 @@ namespace ModoJogoApp
         [DllImport("user32.dll")] private static extern bool SetWindowPos(IntPtr h, IntPtr a, int x, int y, int cx, int cy, uint f);
         [DllImport("user32.dll", CharSet = CharSet.Auto)] private static extern IntPtr FindWindow(string classe, string titulo);
         [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr h);
+        [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr h, int cmd);
         [DllImport("powrprof.dll")] private static extern uint PowerGetActiveScheme(IntPtr raiz, out IntPtr guidAtivo);
 
         private class HotkeyWindow : NativeWindow
@@ -79,8 +83,8 @@ namespace ModoJogoApp
             { P = p; CreateHandle(new CreateParams()); }
             protected override void WndProc(ref Message m)
             {
-                if (m.Msg == 0x0312 && m.WParam.ToInt32() == 1) P.Executar("Desativar");
-                if (m.Msg == 0x0312 && m.WParam.ToInt32() == 2) P.Executar("Ativar");
+                if (m.Msg == 0x0312 && m.WParam.ToInt32() == 1) { P.RestaurarApp(); P.Executar("Desativar"); }
+                if (m.Msg == 0x0312 && m.WParam.ToInt32() == 2) { P.RestaurarApp(); P.Executar("Ativar"); }
                 base.WndProc(ref m);
             }
         }
@@ -350,7 +354,7 @@ namespace ModoJogoApp
 
             // --- cartoes de acao ---
             cartaoJogo = new Cartao { Clicavel = true, Location = new Point(34, 100), Size = new Size(238, 190) };
-            cartaoJogo.Clicou += (s, e) => AcionarComWallpaper();
+            cartaoJogo.Clicou += (s, e) => AcionarComWallpaperSalvo();
             cartaoNormal = new Cartao { Clicavel = true, Location = new Point(288, 100), Size = new Size(238, 190) };
             cartaoNormal.Clicou += (s, e) => Executar("Desativar");
             DesenharCartaoAcao(cartaoJogo, "MODO JOGO", "Fecha o que nao e jogo,\npausa o Update,\nlimpa a tela",
@@ -569,12 +573,21 @@ namespace ModoJogoApp
             txtManter.TextChanged += (s, e) => manterProcessos = txtManter.Text;
             var lbManter = new Label
             {
-                Text = "Exemplo: OpenCode,RobloxStudio,devenv,obs64",
+                Text = "Easy Anti-Cheat, BattlEye, GameGuard, XignCode, nProtect e Valve Anti-Cheat estao SEMPRE protegidos.",
                 Font = new Font("Segoe UI", 8F), ForeColor = Paleta.TextoFraco,
                 AutoSize = false, Location = new Point(736, 62), Size = new Size(250, 20),
                 BackColor = Color.Transparent
             };
-            cManter.Controls.AddRange(new Control[] { txtManter, lbManter });
+            // Interruptor do VIGILANTE: o sistema que fecha sozinho, em segundo
+            // plano, os programas que o Windows volta a abrir.
+            caixaVigilante = new Caixa
+            {
+                Texto = "Vigilante: fechar automaticamente em segundo plano",
+                Detalhe = "mantem o PC limpo enquanto o modo jogo estiver ligado",
+                Marcada = true, Location = new Point(20, 250), Size = new Size(480, 28)
+            };
+            caixaVigilante.Mudou += (s, e) => { opcaoVigilante = caixaVigilante.Marcada; };
+            cManter.Controls.AddRange(new Control[] { txtManter, lbManter, caixaVigilante });
             p.Controls.Add(cManter);
 
             AtualizarCartoesPerfil();
@@ -1226,13 +1239,11 @@ namespace ModoJogoApp
         // =================================================================
         //  EXECUCAO
         // =================================================================
-        private void AcionarComWallpaper()
+        // O MODO JOGO ja nao abre o seletor de wallpaper: a escolha dava
+        // demasiados bugs (a janela do jogo abria por tras do dialogo).
+        // O wallpaper continua a poder-se escolher na pagina AJUSTES.
+        private void AcionarComWallpaperSalvo()
         {
-            using (var sel = new SeletorWallpaper(pastaWallpapers))
-            {
-                if (sel.ShowDialog() != DialogResult.OK) return;
-                if (!string.IsNullOrEmpty(sel.Escolhido)) { wallSelecionado = sel.Escolhido; SalvarWallpadrao(); }
-            }
             Executar("Ativar");
         }
 
@@ -1343,12 +1354,39 @@ namespace ModoJogoApp
 
         // Le o log enquanto o script corre: o registo aparece linha a linha
         // em vez de tudo de uma vez no fim.
+        // Processos que o VIGILANTE fecha de 2 em 2 segundos enquanto o modo
+        // jogo esta ligado. O Windows relanca varios deles sozinho (pesquisa,
+        // widgets, noticias do Inicio, assistants), e sem o vigilante voltam
+        // a aparecer e a comer RAM.
+        //
+        // NUNCA entram aqui: o jogo, os launchers, o anti-cheat, o WebView2
+        // (msedgewebview2 = motor de interface da Epic e do Roblox) e o
+        // driver de video. Matar o WebView2 deixa a janela PRETA.
+        private static readonly string[] ProcessosRuidosos = {
+            // pesquisa do Windows
+            "SearchHost", "SearchApp", "SearchIndexer", "SearchProtocolHost", "SearchFilterHost",
+            // widgets, painel de noticias e Inicio
+            "Widgets", "WidgetService", "WidgetBoard", "MicrosoftStartFeedProvider",
+            "StartMenuExperienceHost", "SearchApp",
+            // browsers e assistants que se autolancam
+            "msedge", "mscopilot", "Copilot", "MicrosoftTeams", "ms-teams", "Teams",
+            "OneDrive", "OneDrive.Sync.Service", "Dropbox",
+            // processos de servico que o shell volta a levantar
+            "UserOOBEBroker", "AQAUserPS", "ACCUserPS", "WUDFHost", "WpcMon",
+            "AcerQAAgent", "AcerCCAgent", "AcerDIAgent", "AcerService",
+            "AcerServiceWrapper", "AcerSysHardwareService", "AcerGAICameraService",
+            "IntelGraphicsSoftware.Overlay", "PresentMonService", "PresentMonSharedService"
+        };
+
         private static readonly string[] ProcessosPesquisa = {
             "SearchHost", "SearchApp", "SearchIndexer", "SearchProtocolHost", "SearchFilterHost"
         };
 
         // Mata a pesquisa quando o modo jogo esta ligado ou quando a pesquisa
         // foi desactivada de proposito. Fora dessas condicoes nao se mexe.
+        // O VIGILANTE: fecha os processos que o Windows relanca sozinho e
+        // volta a esconder a barra de tarefas. Corre enquanto o modo jogo esta
+        // ligado, mesmo com a app minimizada.
         private void VigiarPesquisa()
         {
             try
@@ -1356,6 +1394,8 @@ namespace ModoJogoApp
                 bool modoJogo = File.Exists(arquivoEstado);
                 bool pesquisaOff = File.Exists(Path.Combine(EstadoDir, "busca.json"));
                 if (!modoJogo && !pesquisaOff) return;
+
+                // A pesquisa e sempre fora, mesmo fora do modo jogo.
                 foreach (var p in Process.GetProcesses())
                 {
                     try
@@ -1364,6 +1404,56 @@ namespace ModoJogoApp
                     }
                     catch { }
                 }
+
+                if (!modoJogo || !opcaoVigilante) return;
+
+                // O resto dos ruido so no modo jogo.
+                foreach (var p in Process.GetProcesses())
+                {
+                    try
+                    {
+                        if (Array.IndexOf(ProcessosRuidosos, p.ProcessName) >= 0) p.Kill();
+                    }
+                    catch { }
+                }
+
+                // O Windows volta a mostrar a barra de tarefas sozinho.
+                if (opcaoVigiarBarra) EsconderBarra();
+            }
+            catch { }
+        }
+
+        // Minimiza a app para nao tapar o jogo ou o launcher.
+        private void MinimizarParaSegundoPlano()
+        {
+            try
+            {
+                if (WindowState != FormWindowState.Minimized) WindowState = FormWindowState.Minimized;
+                ShowInTaskbar = false;
+            }
+            catch { }
+        }
+
+        // Traz a app de volta quando o utilizador precisa dela.
+        private void RestaurarApp()
+        {
+            try
+            {
+                ShowInTaskbar = true;
+                if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
+                Show();
+                Activate();
+            }
+            catch { }
+        }
+
+        // Esconde a barra de tarefas (a janela Shell_TrayWnd).
+        private void EsconderBarra()
+        {
+            try
+            {
+                IntPtr h = FindWindow("Shell_TrayWnd", null);
+                if (h != IntPtr.Zero) ShowWindow(h, 0);
             }
             catch { }
         }
@@ -1441,6 +1531,9 @@ namespace ModoJogoApp
                                      processosAntes + " -> " + restantes + " processos  |  " +
                                      "RAM +" + Math.Round(info.AvailablePhysicalMemory / 1073741824.0 - ramAntes, 2) + " GB";
                     lblStatus.ForeColor = Paleta.Verde;
+                    // A app e SEMPRE NO TOPO. Se ficar aberta tapa a janela do
+                    // launcher e do jogo. Ao ativar, ela minimiza-se.
+                    MinimizarParaSegundoPlano();
                 }
                 else
                 {
@@ -1479,6 +1572,10 @@ namespace ModoJogoApp
         }
     }
 }
+
+
+
+
 
 
 
