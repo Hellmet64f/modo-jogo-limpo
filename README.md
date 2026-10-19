@@ -4,7 +4,9 @@
 
 ### O teu PC como uma sessão de cloud gaming — e volta **exatamente** ao que estava.
 
-[![Beta](https://img.shields.io/badge/estado-BETA%20%F0%9F%9A%80-ff6b6b?style=for-the-badge)](https://github.com)
+[![Beta](https://img.shields.io/badge/estado-BETA%20%F0%9F%9A%80-ff6b6b?style=for-the-badge)](https://github.com/Hellmet64f/modo-jogo-limpo/releases)
+[![Release](https://img.shields.io/badge/download-v4.0-8b5cf6?style=for-the-badge&logo=github)](https://github.com/Hellmet64f/modo-jogo-limpo/releases/latest)
+[![Site](https://img.shields.io/badge/site-gh--pages-22d3ee?style=for-the-badge&logo=githubpages)](https://hellmet64f.github.io/modo-jogo-limpo/)
 [![Licença](https://img.shields.io/badge/licen%C3%A7a-MIT-8b5cf6?style=for-the-badge)](LICENSE)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078d4?style=for-the-badge)]()
 [![Código aberto](https://img.shields.io/badge/c%C3%B3digo-aberto-2ea44f?style=for-the-badge)]()
@@ -19,6 +21,20 @@
 > Funciona e foi testado em vários PCs, mas **pode ter bugs**. Testa sempre
 > antes de uma sessão longa. Grava o teu trabalho antes de activar.
 > Os erros que encontrares são bem-vindos — são o que falta para a v1.
+
+---
+
+## ⬇️ Descarregar
+
+<div align="center">
+
+[![Descarregar v4.0](https://img.shields.io/badge/%E2%9A%99%20Descarregar%20v4.0-8b5cf6?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Hellmet64f/modo-jogo-limpo/releases/latest/download/ModoJogoLimpo-v4.0.zip)
+
+**79 KB** · Windows 10/11 · requer administrador · [ver todas as versões](https://github.com/Hellmet64f/modo-jogo-limpo/releases)
+
+[**🌐 Abrir o site do projeto**](https://hellmet64f.github.io/modo-jogo-limpo/)
+
+</div>
 
 ---
 
@@ -268,4 +284,7 @@ corrigido está lá, com a explicação do porque.
 
 [MIT](LICENSE) — usa, copia, modifica e distribui à vontade.
 
+🌐 **Site do projeto:** https://hellmet64f.github.io/modo-jogo-limpo/
+
 Feito com **[OpenCode](https://opencode.ai)**.
+
