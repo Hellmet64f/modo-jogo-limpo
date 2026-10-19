@@ -161,7 +161,7 @@ $Essenciais = @(
     'RdpClient','WlanSvc','WlanPreApp','NlaSvc','dns','dhcp','Dhcp','Dnscache',
     'netprofm','SystemEventsBroker','SecurityHealth','SecurityHealthSystray',
     'LockApp','explorer','ShellHost','ShellExperienceHost','StartMenuExperienceHost',
-    'SearchHost','SearchApp','ApplicationFrameHost','Widgets','WidgetBoard',
+    'ApplicationFrameHost','Widgets','WidgetBoard',
     'nvcontainer','nvdisplaycontainer','NVDisplay.ContainerLocalSystem',
     'IntelGraphicsSoftware.Service',
     # O WebView2 e o motor de interface da Epic, do Roblox, do Windows 11 e
@@ -192,7 +192,7 @@ $Bloqueados = @(
     'OneDrive.exe','OneDrive.Sync.Service.exe','Dropbox.exe',
     'SearchIndexer.exe','SearchProtocolHost.exe','SearchFilterHost.exe',
     'Widgets.exe','WidgetService.exe','WidgetBoard.exe','Copilot.exe','mscopilot.exe',
-    'AADPluginHost.exe','Microsoft.AAD.BrokerPlugin',
+    'AADPluginHost.exe',
     'PhoneExperienceHost.exe','YourPhone.exe','MicrosoftTeams.exe','ms-teams.exe',
     'Teams.exe','MicrosoftMaps.exe','Weather.exe','FeedbackHub.exe',
     'GetHelp.exe','MicrosoftSolitaireCollection.exe','StickyNotes.exe',
@@ -717,7 +717,7 @@ $MatarSempre = @(
     'gamingservices','gamingservicesnet','PresentMonService','PresentMonSharedService',
     'mscopilot','Copilot','MicrosoftTeams','ms-teams','Teams',
     'OneDrive','OneDrive.Sync.Service','Dropbox','SearchIndexer','SearchProtocolHost','SearchFilterHost',
-    'SearchFilterHost','MicrosoftStartFeedProvider','WidgetService','WidgetBoard','Widgets',
+    'MicrosoftStartFeedProvider',
     'CrossDeviceService','CrossDeviceResume','UserOOBEBroker','AQAUserPS','ACCUserPS',
     'WUDFHost','WpcMon','SystemSettings','MpDefenderCoreService','MpCmdRun',
     'AAADSvc','ADESv2Svc','ADESv2BW','ipfsvc','ipf_uf','ipf_helper','jhi_service',
@@ -880,7 +880,11 @@ function Desativar {
     }
     # Remove o plano "Desempenho Maximo" que o modo jogo criou (se criou).
     if ($script:Snap.PlanoCriado -and -not $DryRun) {
-        Set-Power @("/delete", $script:Snap.PlanoCriado)
+        # O plano pode ainda estar "em uso" durante uns instantes apos o setactive.
+        Start-Sleep -Seconds 3
+        $o = & powercfg /delete $script:Snap.PlanoCriado 2>&1
+        if ($LASTEXITCODE -eq 0) { Log "plano 'Desempenho Maximo' temporario apagado" }
+        else { Log "o plano temporario ficou (erro: $o)" 'DarkYellow' }
     }
 
     # --- 9) interface ---
