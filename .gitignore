@@ -22,3 +22,7 @@ app/GerarIcone.exe
 # Temporarios do build
 *.pdb
 obj/
+
+# Script de publicacao (contem o token quando corre) - nao vai para o repo
+publicar.cmd
+publicar.ps1
