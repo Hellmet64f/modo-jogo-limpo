@@ -1,4 +1,4 @@
-﻿# Backups locais datados (fora do controle de versao)
+﻿# Backups locais datados (fora do controlo de versao)
 _backup/
 
 # Logs gerados em tempo de execucao
@@ -6,6 +6,18 @@ _backup/
 ultima-saida.txt
 resultado.txt
 snapshot.json
+busca.json
+
+# Wallpapers: sao imagens pessoais de cada utilizador.
+# O app le todas as imagens que encontrar nesta pasta - basta colocar as tuas.
+wallpapers/*.jpg
+wallpapers/*.jpeg
+wallpapers/*.png
+wallpapers/*.bmp
+!wallpapers/README.md
+
+# Binarios auxiliares regeneraveis a partir do codigo (.cs)
+app/GerarIcone.exe
 
 # Temporarios do build
 *.pdb

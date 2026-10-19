@@ -14,7 +14,9 @@ namespace ModoJogoApp
     public class MainForm : Form
     {
         // ---------- infra ----------
-        private const string DirPadrao = @"C:\Users\migue\JogoLimpo";
+        // A pasta do app e a propria pasta do executavel: funciona em qualquer
+        // computador e nao fica preso a um caminho de um utilizador especifico.
+        private static readonly string DirPadrao = ObterPastaPadrao();
         public static string DirBase = DirPadrao;
 
         private static readonly string EstadoDir =
@@ -127,6 +129,19 @@ namespace ModoJogoApp
         // =================================================================
         //  CONSTRUTOR
         // =================================================================
+        // Descobre a pasta onde o aplicativo vive, para o script, o
+        // wallpaper e o codigo-fonte andarem sempre juntos.
+        private static string ObterPastaPadrao()
+        {
+            try
+            {
+                string p = Path.GetDirectoryName(Application.ExecutablePath);
+                if (!string.IsNullOrEmpty(p) && Directory.Exists(p)) return p;
+            }
+            catch { }
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "JogoLimpo");
+        }
+
         public MainForm()
         {
             string cfg = Path.Combine(EstadoDir, "pasta.txt");
@@ -221,7 +236,14 @@ namespace ModoJogoApp
 
             // O estado SÓ era lido depois de uma acao: ao abrir, a etiqueta
             // dizia sempre "MODO NORMAL" mesmo com o modo jogo ativo.
+            // Ao arrancar, o estado tem de reflectir a realidade: se o modo
+            // jogo ja estiver ligado, o texto tem de dizer isso.
             AtualizarEstado();
+            if (File.Exists(arquivoEstado))
+            {
+                lblStatus.Text = "Modo jogo ativo. Ctrl+Alt+M volta ao normal.";
+                lblStatus.ForeColor = Paleta.Verde;
+            }
         }
 
         // Atalho de teclado SEM depender do RegisterHotKey: funciona quando a
@@ -247,21 +269,30 @@ namespace ModoJogoApp
             // apenas uma linha na barra de tarefas.
             if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
             ShowInTaskbar = true;
-            // Centra a janela no ecra principal usando os limites REAIS.
-            // O StartPosition=CenterScreen calculava mal quando a area de
-            // trabalho e menor do que a janela e deixava-a fora do ecra.
-            var s = Screen.PrimaryScreen;
-            if (s != null)
-            {
-                var wa = s.WorkingArea;
-                int x = wa.Left + (wa.Width - Width) / 2;
-                int y = wa.Top + (wa.Height - Height) / 2;
-                if (x < wa.Left) x = wa.Left;
-                if (y < wa.Top) y = wa.Top;
-                Location = new Point(x, y);
-            }
         }
 
+        // Centra a janela NO SEGUINTE passo ao OnLoad. O Windows aplica a
+        // posicao que guardou da ultima sessao DEPOIS do OnLoad, por isso
+        // centrar aqui era sobrescrito e a janela abria fora do ecra.
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            try
+            {
+                var s = Screen.FromControl(this);
+                if (s == null) s = Screen.PrimaryScreen;
+                if (s != null)
+                {
+                    var wa = s.WorkingArea;
+                    int x = wa.Left + (wa.Width - Width) / 2;
+                    int y = wa.Top + (wa.Height - Height) / 2;
+                    if (x < wa.Left) x = wa.Left;
+                    if (y < wa.Top) y = wa.Top;
+                    Location = new Point(x, y);
+                }
+            }
+            catch { }
+        }
         // =================================================================
         //  MONTAGEM DA INTERFACE
         // =================================================================
