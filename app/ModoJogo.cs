@@ -36,6 +36,8 @@ namespace ModoJogoApp
         private bool opcaoVigiarBarra = true;
         private Caixa caixaVigilante;
         private bool opcaoVigilante = true;
+        private bool opcaoConfirmar = true;
+        private Caixa caixaConfirmar;
 
         // ---------- contadores ----------
         private int processosAntes = 0;
@@ -226,6 +228,11 @@ namespace ModoJogoApp
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
+            // O Windows lembra o estado da janela: se a app ficou minimizada
+            // no ultimo MODO JOGO, arrancava minimizada e o utilizador via
+            // apenas uma linha na barra de tarefas.
+            if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal;
+            ShowInTaskbar = true;
             // Centra a janela no ecra principal usando os limites REAIS.
             // O StartPosition=CenterScreen calculava mal quando a area de
             // trabalho e menor do que a janela e deixava-a fora do ecra.
@@ -587,7 +594,14 @@ namespace ModoJogoApp
                 Marcada = true, Location = new Point(20, 250), Size = new Size(480, 28)
             };
             caixaVigilante.Mudou += (s, e) => { opcaoVigilante = caixaVigilante.Marcada; };
-            cManter.Controls.AddRange(new Control[] { txtManter, lbManter, caixaVigilante });
+            caixaConfirmar = new Caixa
+            {
+                Texto = "Pedir confirmacao antes de fechar programas",
+                Detalhe = "desliga para o modo jogo com um atalho, sem dialogo",
+                Marcada = true, Location = new Point(20, 282), Size = new Size(480, 28)
+            };
+            caixaConfirmar.Mudou += (s, e) => { opcaoConfirmar = caixaConfirmar.Marcada; };
+            cManter.Controls.AddRange(new Control[] { txtManter, lbManter, caixaVigilante, caixaConfirmar });
             p.Controls.Add(cManter);
 
             AtualizarCartoesPerfil();
@@ -1323,7 +1337,10 @@ namespace ModoJogoApp
 
         private void ConfirmarAtivacao()
         {
-            // Avisa antes de fechar programas que o utilizador nao pediu para manter.
+            // O dialogo tem de ser visivel: se a app estiver minimizada,
+            // a mensagem aparece escondida e o modo jogo nunca arranca.
+            if (!opcaoConfirmar) { return; }
+            RestaurarApp();
             var abertos = new System.Collections.Generic.List<string>();
             foreach (var p in Process.GetProcesses())
             {
