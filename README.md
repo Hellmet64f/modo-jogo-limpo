@@ -2,47 +2,101 @@
 
 # 🎮 Modo Jogo Limpo
 
-**Um aplicativo para Windows 11 que deixa o PC como uma sessão de cloud gaming:
-só o jogo, os launchers e o mínimo do sistema — e que volta *exatamente* ao
-estado em que estava.**
+### O teu PC como uma sessão de cloud gaming — e volta **exatamente** ao que estava.
 
-Aplicativo nativo em C# (.NET Framework) + motor em PowerShell.
-Sem dependências externas. Código aberto.
+[![Beta](https://img.shields.io/badge/estado-BETA%20%F0%9F%9A%80-ff6b6b?style=for-the-badge)](https://github.com)
+[![Licença](https://img.shields.io/badge/licen%C3%A7a-MIT-8b5cf6?style=for-the-badge)](LICENSE)
+[![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078d4?style=for-the-badge)]()
+[![Código aberto](https://img.shields.io/badge/c%C3%B3digo-aberto-2ea44f?style=for-the-badge)]()
+[![C#](https://img.shields.io/badge/interface-C%23-239120?style=for-the-badge)]()
+[![PowerShell](https://img.shields.io/badge/motor-PowerShell-012456?style=for-the-badge)]()
 
 </div>
 
 ---
 
-## O que é
+> ### ⚠️ Isto está em **BETA**
+> Funciona e foi testado em vários PCs, mas **pode ter bugs**. Testa sempre
+> antes de uma sessão longa. Grava o teu trabalho antes de activar.
+> Os erros que encontrares são bem-vindos — são o que falta para a v1.
 
-O [GeForce Now](https://www.nvidia.com/pt-pt/geforce-now/) e o [Blacknut](https://www.blacknut.com/)
-correm o jogo num ambiente limpo, isolado do teu PC. O **Modo Jogo Limpo** faz
-a mesma coisa **localmente**: desliga tudo o que não é jogo, esconde a interface
-do Windows 11, pausa as actualizações e deixa o sistema leve — e depois
-**desfaz tudo, ao milímetro**.
+---
+
+## O que é isto?
+
+O [GeForce Now](https://www.nvidia.com/pt-pt/geforce-now/) e o
+[Blacknut](https://www.blacknut.com/) correm o teu jogo num ambiente limpo,
+isolado do teu PC. O **Modo Jogo Limpo** faz a mesma coisa **localmente**:
+
+> 🧹 **Fecha** tudo o que não é jogo
+> 🙈 **Esconde** a interface do Windows 11
+> ⏸️ **Pausa** as actualizações e a recolha de dados
+> 🧠 **Liberta** a RAM e o CPU para o jogo
+> ↩️ **Desfaz tudo**, ao milímetro, quando quiseres
 
 ```text
-Antes         Depois (modo jogo)      Após "modo normal"
-─────────────────────────────────    ────────────────────────────
-240 processos  148 processos          volta ao estado original
-2,2 GB RAM     2,9 GB RAM livres      plano de energia original
-26 serviços    85 serviços            tarefas reativadas
-2,8 GB wasted  ~0,4 GB wasted         ícones da área de trabalho de volta
+                         ANTES          MODO JOGO      DEPOIS DE VOLTAR
+Processos               240      →      148      →      volta ao original
+Serviços a correr       126      →       85      →      volta ao original
+Tarefas agendadas       144      →      142      →      volta ao original
+RAM livre             2,2 GB     →    2,9 GB     →      volta ao original
+Plano de energia   Equilibrado  →  Desem. Máx.  →  Equilibrado (o teu!)
 ```
 
 ---
 
-## 🖼️ O aplicativo
+## 🖼️ As quatro páginas
 
 | Painel | Perfis | Estado | Ajustes |
-|---|---|---|---|
+|:---:|:---:|:---:|:---:|
 | ![Painel](docs/01-painel.png) | ![Perfis](docs/02-perfis.png) | ![Estado](docs/03-estado.png) | ![Ajustes](docs/04-ajustes.png) |
+
+---
+
+## 🔓 100% de controlo — nada é uma caixa negra
+
+Este aplicativo **nunca te pede confiança**. Espera que acredites.
+
+- **Vês tudo o que vai ser desligado** antes de acontecer, na página *Estado*.
+- **Cada alteração é reversível** — e o reverso é exacto, não aproximado.
+- **Tens o snapshot**: antes de mexer em alguma coisa, o aplicativo grava o
+  estado anterior de *tudo* — cada serviço (e o seu tipo de arranque), cada
+  tarefa agendada, cada chave de registo, o plano de energia, as exclusões do
+  antivírus, os itens de inicialização e os atalhos. O "modo normal" lê esse
+  ficheiro e desfaz item a item.
+- **Se o snapshot não puder ser lido, nada é alterado.** Falha segura.
+- **`-DryRun`**: mostra exactamente o que ia ser feito, sem tocar em nada.
+- **Perfil personalizado**: escolhes categoria por categoria o que desliga.
+- **O código está todo aberto**, nas tuas mãos, para leres e mudares como
+  quiseres.
+
+### 📂 Onde fica o snapshot
+
+```
+%LOCALAPPDATA%\ModoJogoLimpo\snapshot.json
+```
+
+É um ficheiro de texto. Podes abrir, ler e até editar à mão.
+
+---
+
+## 🧠 O motor: um snapshot antes de tudo
+
+A maioria dos "modos jogo" da internet desligam coisas e **nunca mais ligam**.
+Este faz o inverso.
+
+```
+   snapshot.json  ──►  desligar tudo  ──►  jogar  ──►  snapshot.json  ──►  tudo como estava
+```
+
+O mesmo snapshot protege o teu **anti-cheat**: se o modo jogo desligar um
+serviço de anti-cheat, ele volta exactamente como estava.
 
 ---
 
 ## ✨ Funcionalidades
 
-### Três perfis
+### ☁️ Três perfis
 
 | Perfil | O que faz |
 |---|---|
@@ -50,34 +104,44 @@ Antes         Depois (modo jogo)      Após "modo normal"
 | 🎮 **Leve** | Mantém Discord, WhatsApp e o navegador. Não mexe no Update. |
 | ⚙️ **Personalizado** | Escolhes categoria por categoria (11 disponíveis). |
 
-### O que o modo jogo desliga
+### 📦 As 11 categorias
 
-- **Interface do Windows 11** — barra de tarefas escondida, menu Início, barra
-  de pesquisa, widgets, chat, Cortana e notificações desligados
-- **Telemetria** — 34 serviços de recolha de dados, tarefas agendadas de
-  compatibilidade e a política de telemetria a `0`
-- **Windows Update** — pausado durante a sessão (volta ao estado original depois)
-- **Indexação e busca** — o Windows Search e o indexador param
-- **Gravação de tela** — Game DVR desligado (deixa de gravar em segundo plano)
-- **Desempenho** — plano "Desempenho Máximo", CPU mínima a 100%, sem suspensão
-  USB nem PCIe
-- **Programas que voltam sozinhos** — 59 programas bloqueados (Edge, OneDrive,
-  Copilot, widgets, bloatware…)
-- **Itens de inicialização** — adiados até ao fim
-- **Antivírus** — exclusões para o Epic e o Steam, com protecção em tempo real
-  desactivada durante a partida
-- **Área de trabalho** — fica só o ícone do aplicativo, o Epic, o Steam e os
-  teus jogos
-- **Processos e serviços de fundo** — fecha o que não é jogo
+| Categoria | O que desliga |
+|---|---|
+| **Interface do Windows 11** | barra de tarefas escondida, menu Início, barra de pesquisa, widgets, chat, Cortana, notificações |
+| **Telemetria e recolha de dados** | 34 serviços de recolha, tarefas agendadas de compatibilidade, política de telemetria a `0` |
+| **Windows Update** | pausado durante a sessão (volta ao estado original depois) |
+| **Indexação e busca** | o Windows Search e o indexador de ficheiros |
+| **Gravação de tela** | Game DVR desligado — deixa de gravar em segundo plano |
+| **Desempenho e energia** | plano "Desempenho Máximo", CPU mínima a 100%, sem suspensão USB nem PCIe |
+| **Programas que voltam sozinhos** | 59 programas bloqueados (Edge, OneDrive, Copilot, widgets, bloatware…) |
+| **Itens de inicialização** | adiados até ao fim da sessão |
+| **Antivírus** | exclusões para o Epic e o Steam |
+| **Área de trabalho** | fica só o ícone do app, o Epic, o Steam e os teus jogos |
+| **Processos e serviços de fundo** | fecha o que não é jogo |
+
+### 🛡️ O vigilante — fica a trabalhar em segundo plano
+
+O Windows relança sozinho vários programas (a pesquisa, os widgets, o painel de
+notícias do Início, os assistants, o OneDrive, o browser). O **vigilante** é um
+temporizador dentro do aplicativo que, **de 2 em 2 segundos**:
+
+- fecha a **pesquisa** do Windows (é uma app UWP — o Windows volta a
+  arrancá-la, sem o vigilante ela volta a aparecer e a comer ~160 MB)
+- fecha os **programas que se autolançam**
+- volta a **esconder a barra de tarefas** quando o Windows a mostra
+
+Corre **mesmo com o aplicativo minimizado** — fica lá a trabalhar enquanto
+jogas. Liga e desliga na página *Perfis*.
 
 ### 🔒 O que NUNCA é tocado
 
 Estas regras estão no código e são a razão de o aplicativo não partir o teu PC:
 
 - **O WebView2** (`msedgewebview2.exe`) — é o motor de interface da Epic, do
-  Roblox e da própria pesquisa do Windows 11. Bloquear ou matar o WebView2 deixa
-  a janela **preta** e a aplicação não funciona. *(Este bug aconteceu e foi
-  corrigido — vê o histórico do git.)*
+  Roblox e da própria pesquisa do Windows 11. Bloquear ou matar o WebView2
+  deixa a janela **preta** e a aplicação não funciona. *(Este bug aconteceu,
+  foi diagnosticado e corrigido — vê o histórico do git.)*
 - **O driver de vídeo, o áudio e a rede**
 - **O Explorador** (é ele que desenha o wallpaper)
 - **O anti-cheat** — Easy Anti-Cheat, BattlEye, GameGuard, XignCode, nProtect e
@@ -88,47 +152,6 @@ Estas regras estão no código e são a razão de o aplicativo não partir o teu
 
 ---
 
-## 🧠 A ideia principal: o snapshot
-
-A maioria dos "modos jogo" da internet desligam coisas e **nunca mais
-ligam**. Este grava o estado **antes** de mexer e desfaz tudo a seguir.
-
-```
-%LOCALAPPDATA%\ModoJogoLimpo\snapshot.json
-```
-
-O snapshot guarda, item a item:
-
-- cada serviço alterado (e o seu **tipo de arranque original**)
-- cada tarefa agendada
-- cada chave de registo (com o valor anterior, ou a informação de que
-  **não existia**)
-- o **plano de energia** que estava activo
-- as exclusões do antivírus que já existiam
-- os itens de inicialização
-- os atalhos da área de trabalho
-
-O "modo normal" lê o snapshot e desfaz tudo. **Se o snapshot não puder ser
-lido, nada é alterado** (falha segura).
-
-O mesmo snapshot protege o teu anti-cheat: se o modo jogo desligar um serviço
-de anti-cheat, ele volta exactamente como estava.
-
----
-
-## 🛡️ O vigilante
-
-Um temporizador dentro do aplicativo corre de 2 em 2 segundos e:
-
-- fecha a **pesquisa** do Windows (é uma app UWP: o Windows relança-a sempre)
-- fecha os **programas que voltam sozinhos** — widgets, painel de notícias do
-  Início, assistants, OneDrive, browser, bloatware do fabricante
-- volta a **esconder a barra de tarefas** quando o Windows a mostra
-
-Corre mesmo com o aplicativo minimizado. Liga e desliga na página **Perfis**.
-
----
-
 ## ⌨️ Atalhos
 
 | Atalho | Acção |
@@ -136,21 +159,21 @@ Corre mesmo com o aplicativo minimizado. Liga e desliga na página **Perfis**.
 | `Ctrl` + `Alt` + `J` | Activar o modo jogo |
 | `Ctrl` + `Alt` + `M` | Voltar ao modo normal (emergência) |
 
-Também funciona: `ModoJogo.exe --pagina=perfis` abre directo num separador.
+O aplicativo **minimiza-se sozinho** quando activa o modo jogo — como está
+sempre no topo, tapava a janela do launcher e do jogo.
 
 ---
 
 ## 📥 Instalar
 
-1. Descarrega o [`ModoJogo.exe`](ModoJogo.exe) para uma pasta tua (por exemplo
-   `C:\JogoLimpo`).
-2. Cria um atalho para ele no ambiente de trabalho.
-3. Executa. Vai pedir autorização de administrador (é preciso para mexer em
+1. Descarrega o [`ModoJogo.exe`](ModoJogo.exe) para uma pasta tua
+   (por exemplo `C:\JogoLimpo`).
+2. Cria um atalho no ambiente de trabalho.
+3. Executa. Pede autorização de administrador (é preciso para mexer em
    serviços, tarefas e registo).
 
-O aplicativo funciona a partir de **qualquer pasta** — encontra o script e os
-wallpapers ao lado de si. Se quiseres mudar de pasta, usa o botão
-**"Mudar pasta..."** na página *Ajustes*.
+Funciona a partir de **qualquer pasta** — encontra o script e os wallpapers ao
+lado de si. Para mudar de pasta: botão **"Mudar pasta..."** na página *Ajustes*.
 
 ### Wallpapers
 
@@ -168,8 +191,8 @@ Precisas do **.NET Framework 4.x** (o `csc.exe` já vem com ele).
 build.cmd
 ```
 
-Compila os `.cs` da pasta `app\` para `ModoJogo.exe`, com o ícone e o
-manifesto (que pede administrador e ativa o DPI por monitor).
+Compila os `.cs` da pasta `app\` para `ModoJogo.exe`, com o ícone e o manifesto
+(que pede administrador e ativa o DPI por monitor).
 
 ---
 
@@ -191,10 +214,10 @@ docs\            capturas de ecrã
 
 ---
 
-## ⚙️ Opções de linha de comandos
+## ⚙️ Linha de comandos
 
 ```powershell
-.\ModoJogo.ps1 -Acao Ativar    -Perfil nuvem -DryRun   # mostra o plano sem tocar em nada
+.\ModoJogo.ps1 -Acao Ativar    -Perfil nuvem -DryRun   # mostra o plano, não toca em nada
 .\ModoJogo.ps1 -Acao Ativar    -Perfil leve
 .\ModoJogo.ps1 -Acao Ativar    -Perfil personalizado -Categorias "interface,telemetria,processos"
 .\ModoJogo.ps1 -Acao Desativar
@@ -202,8 +225,22 @@ docs\            capturas de ecrã
 .\ModoJogo.ps1 -Acao Estado
 ```
 
-`-DryRun` imprime exactamente o que ia ser feito, sem alterar nada. É a forma
-segura de ver o plano antes de o aplicar.
+---
+
+## 🤝 Ajudar o projeto original
+
+O código é teu para usares, estudares e modificares à vontade — **faz a tua
+versão** sem qualquer obrigação.
+
+Mas se quiseres que o **projeto original** melhore, o caminho é:
+
+1. **Abre uma issue** a descrever o que encontraste
+2. **Manda um pull request** com a correcção
+3. **Reporta um bug** com o que reproduziste — isso vale tanto quanto uma
+   correcção
+
+O historial do git conta a história toda: cada bug que foi diagnosticado e
+corrigido está lá, com a explicação do porque.
 
 ---
 
@@ -211,8 +248,8 @@ segura de ver o plano antes de o aplicar.
 
 - **A caixa "Pesquisar" da barra de tarefas** no Windows 11 24H2 é guardada pelo
   shell num sítio que o registo não controla. O botão *"Definições da barra de
-  tarefas..."* abre a página certa das Definições do Windows (um clique). Durante
-  o modo jogo isso não se vê, porque a barra de tarefas está escondida.
+  tarefas..."* abre a página certa das Definições do Windows (um clique).
+  Durante o modo jogo isso não se vê, porque a barra está escondida.
 - **O "modo normal" não reabre as aplicações que fechou** (Edge, WebView,
   Copilot…). É o comportamento de um modo jogo a sério. A lista *"Não fechar
   estes programas"* deixa-te poupar as que usares.
@@ -220,9 +257,10 @@ segura de ver o plano antes de o aplicar.
   esquecimento: ganha-se FPS mas abre-se uma janela de segurança durante a
   partida. As exclusões para o Epic e o Steam são sempre aplicadas.
 - Atinge-se ~148 processos num PC com 8 GB. Chegar a 60-80 exigiria desligar
-  serviços do sistema **em todo o arranque** (comompartilhamento de `svchost`),
+  serviços do sistema **em todo o arranque** (compartilhamento de `svchost`),
   o que obriga a reiniciar e traz risco de o Windows não arrancar. Não está
   incluído de propósito.
+- **Beta.** Testa antes de confiar.
 
 ---
 

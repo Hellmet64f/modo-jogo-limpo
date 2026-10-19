@@ -203,6 +203,25 @@ namespace ModoJogoApp
             if (pagina == "perfis" || pagina == "estado" || pagina == "ajustes" || pagina == "painel")
                 IrPara(pagina == "estado" ? "diag" : pagina);
 
+            // --exportar=ficheiro.png  grava a pagina actual numa imagem
+            string exportar = "";
+            try
+            {
+                var args2 = Environment.GetCommandLineArgs();
+                for (int i = 1; i < args2.Length; i++)
+                    if (args2[i].StartsWith("--exportar=", StringComparison.OrdinalIgnoreCase))
+                        exportar = args2[i].Substring(11);
+            }
+            catch { }
+            if (exportar != "")
+            {
+                try
+                {
+                    this.Shown += delegate { ExportarImagem(exportar); };
+                }
+                catch { }
+            }
+
             timer = new System.Windows.Forms.Timer { Interval = 1200 };
             timer.Tick += (s, e) => Medir();
             timer.Start();
@@ -477,7 +496,7 @@ namespace ModoJogoApp
             };
             lblDica = new Label
             {
-                Text = "Atalhos: Ctrl+Alt+G ativa  |  Ctrl+Alt+M volta ao normal a qualquer momento",
+                Text = "Atalhos: Ctrl+Alt+J ativa  |  Ctrl+Alt+M volta ao normal a qualquer momento",
                 Font = new Font("Segoe UI", 8.5F), ForeColor = Paleta.TextoFraco,
                 AutoSize = false, Location = new Point(58, 42), Size = new Size(920, 20),
                 BackColor = Color.Transparent
@@ -1486,6 +1505,29 @@ namespace ModoJogoApp
         }
 
         // Minimiza a app para nao tapar o jogo ou o launcher.
+        // Grava a janela actual num ficheiro PNG. Serve para as capturas
+        // de ecra e para quem quiser fazer as suas.
+        private void ExportarImagem(string caminho)
+        {
+            try
+            {
+                // tira a selecao azul do texto (so aparece na exportacao)
+                if (txtDiag != null) { txtDiag.SelectionLength = 0; }
+                if (txtLog != null) { txtLog.SelectionLength = 0; }
+                try { this.Focus(); } catch { }
+                System.Threading.Thread.Sleep(2200);   // os medidores precisam de um tique
+                Application.DoEvents();
+                using (var bmp = new Bitmap(Width, Height))
+                {
+                    DrawToBitmap(bmp, new Rectangle(0, 0, Width, Height));
+                    string dir = Path.GetDirectoryName(caminho);
+                    if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                    bmp.Save(caminho, System.Drawing.Imaging.ImageFormat.Png);
+                }
+            }
+            catch { }
+        }
+
         private void MinimizarParaSegundoPlano()
         {
             try
