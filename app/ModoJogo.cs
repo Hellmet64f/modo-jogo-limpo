@@ -260,7 +260,9 @@ namespace ModoJogoApp
             AtualizarEstado();
             if (File.Exists(arquivoEstado))
             {
-                lblStatus.Text = "Modo jogo ativo. Ctrl+Alt+M volta ao normal.";
+                int procAtivos = Process.GetProcesses().Length;
+                double ramLivre = Math.Round(info.AvailablePhysicalMemory / 1073741824.0, 2);
+                lblStatus.Text = "Modo jogo ativo  |  " + procAtivos + " processos  |  " + ramLivre + " GB de RAM livres";
                 lblStatus.ForeColor = Paleta.Verde;
             }
         }

@@ -1,6 +1,132 @@
-﻿MIT License
+﻿# Modo Jogo Limpo — Licença e Aviso Legal
 
-Copyright (c) 2026 Miguel
+**Copyright (c) 2026 Miguel Rafael Montana**
+
+---
+
+## Em português (leia primeiro)
+
+### O que é isto
+
+O **Modo Jogo Limpo** é uma ferramenta de **ajuda**, criada e publicada de graça
+para que qualquer pessoa possa liberar o seu computador antes de jogar.
+
+Ele **não é um vírus, não é spyware, não é adware e não faz nada de malicioso.**
+Não envia dados para lado nenhum, não abre portas, não se esconde e não
+modifica o registo sem que vejas o registo completo antes e para poder
+desfazer tudo.
+
+### O que ele faz, em concreto
+
+1. **Grava** o estado atual do teu computador num ficheiro de texto
+   (`snapshot.json`) — serviços, tarefas agendadas, chaves de registo, plano de
+   energia, exclusões do antivírus, itens de inicialização e atalhos.
+2. **Desliga** os serviços, tarefas, programas e interfaces que Estão a
+   consumir recursos enquanto joga.
+3. **Restaura** tudo, item a item, a partir desse ficheiro.
+
+Ou seja: **nada é destruído.** Tudo o que é desligado pode ser reposto, e o
+aplicativo mostra-te exactamente o que vai desligar **antes** de desligar.
+
+### Responsabilidade
+
+Este software é fornecido **"tal como está" (AS IS)**, sem garantia de
+qualquer tipo. O autor **não se responsabiliza** por:
+
+- danos causados no computador de quem o utiliza, de quem o recomenda ou de
+  quem o distribui;
+- perda de dados, de jogos, de definições ou de trabalho;
+- incompatibilidades com o Windows, com drivers ou com programas de terceiros;
+- decisões do utilizador depois de o usar.
+
+É responsabilidade de quem o executa decidir se o usa, testá-lo primeiro e
+fazer uma cópia de segurança do que lhe importa. Um **ponto de resturação do
+Windows** antes de activar o modo jogo é sempre boa ideia.
+
+### Código aberto — toda a gente pode ver
+
+Todo o código-fonte deste projeto é **público** sob a licença MIT abaixo.
+Qualquer pessoa pode:
+
+- ler,-studiar e copiar o código;
+- fazer a sua própria versão, modificada, para uso próprio ou alheio;
+- ajudar o projeto original com uma issue ou um pull request.
+
+Obrigado a quem quiser contribuir. As correcções e explicações de bugs valem
+mais do que qualquer código novo.
+
+### Desenvolvimento com ajuda de IA
+
+Este aplicativo foi escrito eOrchivado com a ajuda de
+**[OpenCode](https://opencode.ai)** e de modelos de inteligência artificial.
+Todo o código está disponível para leitura, verificação e crítica — inclusive
+o que a IA escreveu. Se encontrares algo errado, **é um bug, e os bugs
+corrigem-se**.
+
+---
+
+## In English (read this too)
+
+### What this is
+
+**Modo Jogo Limpo** (Clean Game Mode) is a **helper tool**, written and
+published for free so that anyone can free up their computer before playing.
+
+It is **not a virus, not spyware, not adware, and does nothing malicious.**
+It sends no data anywhere, opens no ports, does not hide itself, and does not
+change the registry without showing you the full list first — and being able
+to undo every single change.
+
+### What it actually does
+
+1. **Records** the current state of your computer in a plain text file
+   (`snapshot.json`): services, scheduled tasks, registry keys, power plan,
+   antivirus exclusions, startup items and shortcuts.
+2. **Turns off** the services, tasks, programs and UI elements that consume
+   resources while you play.
+3. **Restores** everything, item by item, from that file.
+
+In other words: **nothing is destroyed.** Everything that is turned off can be
+turned back on, and the app shows you exactly what it is about to turn off
+**before** it turns it off.
+
+### Disclaimer and liability
+
+This software is provided **"AS IS"**, without warranty of any kind. The
+author accepts **no liability** for:
+
+- any damage to the computer of the person running, recommending or
+  redistributing it;
+- loss of data, games, settings or work;
+- incompatibility with Windows, drivers or third-party software;
+- any decision the user makes after using it.
+
+It is the responsibility of the person running it to decide whether to use it,
+to test it first, and to back up what matters. Creating a **Windows Restore
+Point** before enabling game mode is always a good idea.
+
+### Open source — anyone can read it
+
+The entire source code of this project is **public** under the MIT license
+below. Anyone may:
+
+- read, study and copy the code;
+- make their own modified version, for themselves or for others;
+- help the original project with an issue or a pull request.
+
+Thanks to everyone who wants to contribute. Bug reports and explanations are
+worth more than new code.
+
+### AI-assisted development
+
+This application was written, debugged and documented with the help of
+**[OpenCode](https://opencode.ai)** and AI language models. All of the code is
+available for reading, verification and criticism — including the parts AI
+wrote. If you find something wrong, **it is a bug, and bugs get fixed**.
+
+---
+
+# MIT License
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +145,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+## Nome e autoria / Name and authorship
+
+- **Projeto / Project:** Modo Jogo Limpo
+- **Autor / Author:** Miguel Rafael Montana
+- **Copyright:** (c) 2026 Miguel Rafael Montana
+- **Licença / License:** MIT (ver acima / see above)
+- **Feito com / Made with:** [OpenCode](https://opencode.ai) + assistência de IA / AI assistance
