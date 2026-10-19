@@ -94,3 +94,19 @@ Precisa do .NET Framework 4.x (o `csc.exe` ja vem com ele).
 ```
 ModoJogo.exe --pagina=perfis     abre direto num separador
 ```
+
+## Novidades v4.1
+
+- **O MODO JOGO ja nao abre dialogo de wallpaper.** Usa o wallpaper guardado.
+  Para mudar, vai a pagina AJUSTES.
+- **A app minimiza-se sozinha** quando activa o modo jogo: como e sempre no
+  topo, ficava a tapar a janela do launcher e do jogo. `Ctrl+Alt+G` ou
+  `Ctrl+Alt+M` trazem a app de volta.
+- **Vigilante**: um temporizador dentro do app fecha, de 2 em 2 segundos, os
+  programas que o Windows volta a abrir sozinho (widgets, painel de noticias
+  do Inicio, assistants, OneDrive, browser, bloatware Acer) e volta a esconder
+  a barra de tarefas. Corre mesmo com a app minimizada. Liga/desliga na
+  pagina PERFIS.
+- **Anti-cheat sempre protegido**: Easy Anti-Cheat, BattlEye, GameGuard,
+  XignCode, nProtect e Valve Anti-Cheat nunca sao fechados nem bloqueados.
+  Se um destes for morto, o jogo da erro e nao arranca.
