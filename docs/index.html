@@ -1,0 +1,370 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modo Jogo Limpo - o teu PC como uma sessao de cloud gaming</title>
+<meta name="description" content="Deixa o PC como uma sessao de cloud gaming: so o jogo, os launchers e o minimo do sistema. E volta exactamente ao estado em que estava. C# + PowerShell, codigo aberto, MIT.">
+<meta property="og:title" content="Modo Jogo Limpo">
+<meta property="og:description" content="O teu PC como uma sessao de cloud gaming - e volta exactamente ao estado em que estava.">
+<meta property="og:image" content="https://raw.githubusercontent.com/Hellmet64f/modo-jogo-limpo/main/docs/01-painel.png">
+<meta name="theme-color" content="#0b0a18">
+<style>
+:root{
+  --fundo:#0b0a18; --fundo2:#171230; --cartao:#1e1a38; --cartao2:#282248;
+  --borda:#342d58; --borda2:#5b4fa0;
+  --roxo:#8b5cf6; --roxo-claro:#a78bfa; --azul:#3b82f6; --cyan:#22d3ee;
+  --verde:#22c55e; --laranja:#fb923c;
+  --texto:#edeaf5; --suave:#9e96bc; --fraco:#6e678c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--fundo); color:var(--texto); line-height:1.65;
+  font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif; overflow-x:hidden;
+}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(60rem 40rem at 12% -8%, rgba(139,92,246,.16), transparent 60%),
+    radial-gradient(50rem 36rem at 95% 4%, rgba(59,130,246,.13), transparent 60%),
+    radial-gradient(46rem 40rem at 55% 105%, rgba(34,211,238,.07), transparent 60%);
+}
+.env{position:relative;z-index:1}
+.limite{max-width:1120px;margin:0 auto;padding:0 24px}
+a{color:inherit}
+header{
+  position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+  background:rgba(11,10,24,.82);border-bottom:1px solid rgba(91,79,160,.22);
+}
+.topo{display:flex;align-items:center;gap:18px;height:66px}
+.marca{display:flex;align-items:center;gap:11px;font-weight:700;font-size:17px;letter-spacing:-.2px}
+.logo{
+  width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--roxo),var(--azul));color:#fff;font-size:17px;font-weight:800;
+  box-shadow:0 4px 18px rgba(139,92,246,.4)
+}
+.nav{display:flex;gap:26px;margin-left:auto;font-size:14.5px}
+.nav a{color:var(--suave);text-decoration:none;transition:.18s}
+.nav a:hover{color:var(--texto)}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:11px;
+  font-weight:600;font-size:14.5px;text-decoration:none;border:1px solid transparent;cursor:pointer;
+  transition:transform .15s, box-shadow .2s, background .2s; font-family:inherit;
+}
+.btn-primario{background:linear-gradient(135deg,var(--roxo),var(--azul));color:#fff;box-shadow:0 6px 22px rgba(139,92,246,.34)}
+.btn-primario:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(139,92,246,.46)}
+.btn-fantasma{background:rgba(40,34,72,.6);border-color:var(--borda);color:var(--texto)}
+.btn-fantasma:hover{background:var(--cartao2);border-color:var(--borda2)}
+.btn-topo{padding:9px 16px;font-size:14px}
+.heroi{padding:78px 0 54px;text-align:center}
+.etiquetas{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-bottom:26px}
+.etiqueta{
+  font-size:12.5px;font-weight:600;padding:5px 13px;border-radius:99px;
+  background:rgba(139,92,246,.13);border:1px solid rgba(139,92,246,.32);color:var(--roxo-claro)
+}
+.etiqueta.aviso{background:rgba(251,146,60,.12);border-color:rgba(251,146,60,.34);color:#fdba74}
+h1{
+  font-size:clamp(34px,6.2vw,62px);line-height:1.06;letter-spacing:-2.2px;font-weight:800;margin-bottom:20px;
+  background:linear-gradient(120deg,#fff 18%,var(--roxo-claro) 52%,var(--cyan) 92%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent
+}
+.subtitulo{font-size:clamp(16px,2.1vw,20px);color:var(--suave);max-width:680px;margin:0 auto 30px}
+.acoes{display:flex;gap:13px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+.nota{font-size:13px;color:var(--fraco)}
+.cartao-foto{
+  margin:52px auto 0;max-width:1000px;border-radius:16px;overflow:hidden;
+  border:1px solid var(--borda);background:var(--cartao);
+  box-shadow:0 26px 70px rgba(0,0,0,.55),0 0 0 1px rgba(139,92,246,.1)
+}
+.cartao-foto img{display:block;width:100%}
+.estat{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-top:-8px}
+.estat-item{
+  background:linear-gradient(160deg,var(--cartao),rgba(30,26,56,.55));
+  border:1px solid var(--borda);border-radius:14px;padding:22px 18px;text-align:center;
+}
+.estat-num{font-size:31px;font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(120deg,var(--roxo-claro),var(--cyan));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.estat-rot{font-size:13px;color:var(--suave);margin-top:5px}
+section{padding:66px 0}
+.cabecalho{text-align:center;margin-bottom:42px}
+.cabecalho .tag{font-size:12.5px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--roxo);margin-bottom:11px}
+.cabecalho h2{font-size:clamp(25px,3.6vw,37px);letter-spacing:-1.1px;font-weight:800;margin-bottom:11px}
+.cabecalho p{color:var(--suave);max-width:640px;margin:0 auto}
+.grelha{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:18px}
+.cartao{
+  background:linear-gradient(160deg,var(--cartao),rgba(24,20,46,.6));
+  border:1px solid var(--borda);border-radius:15px;padding:24px 22px;transition:.2s
+}
+.cartao:hover{border-color:var(--borda2);transform:translateY(-3px);box-shadow:0 14px 34px rgba(0,0,0,.35)}
+.cartao .icone{
+  width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-size:13px;font-weight:800;
+  background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);margin-bottom:14px;color:var(--roxo-claro)
+}
+.cartao h3{font-size:16.5px;font-weight:700;margin-bottom:7px}
+.cartao p{font-size:14px;color:var(--suave)}
+.galeria{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px}
+.shot{border-radius:13px;overflow:hidden;border:1px solid var(--borda);background:var(--cartao);transition:.2s}
+.shot:hover{border-color:var(--borda2);transform:translateY(-3px)}
+.shot img{display:block;width:100%}
+.shot .legenda{padding:11px 15px;font-size:13.5px;color:var(--suave);border-top:1px solid var(--borda)}
+.lista{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:11px;max-width:940px;margin:0 auto}
+.lista li{
+  list-style:none;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.24);
+  border-radius:11px;padding:13px 17px;font-size:14.5px;display:flex;gap:11px;align-items:flex-start
+}
+.lista li b{color:#86efac}
+.lista .x{color:var(--verde);font-weight:800;flex-shrink:0}
+.passos{counter-reset:p;max-width:760px;margin:0 auto;display:grid;gap:15px}
+.passo{display:flex;gap:17px;align-items:flex-start;background:rgba(30,26,56,.5);border:1px solid var(--borda);border-radius:13px;padding:19px 21px}
+.passo::before{
+  counter-increment:p;content:counter(p);flex-shrink:0;width:30px;height:30px;border-radius:9px;
+  display:grid;place-items:center;font-weight:800;font-size:14px;
+  background:linear-gradient(135deg,var(--roxo),var(--azul));color:#fff
+}
+.passo h4{font-size:15.5px;margin-bottom:4px}
+.passo p{font-size:14px;color:var(--suave)}
+.caixa-codigo{
+  background:#0e0b20;border:1px solid var(--borda);border-radius:12px;padding:16px 19px;
+  font-family:"Cascadia Code",Consolas,monospace;font-size:13.5px;color:var(--cyan);
+  overflow-x:auto;margin-top:9px
+}
+.caixa-codigo .com{color:var(--fraco)}
+.perfil{border-radius:15px;padding:26px 24px;border:1px solid var(--borda);background:linear-gradient(160deg,var(--cartao),rgba(24,20,46,.6))}
+.perfil.atual{border-color:var(--roxo);box-shadow:0 0 0 1px rgba(139,92,246,.25),0 16px 40px rgba(0,0,0,.4)}
+.perfil h3{font-size:19px;font-weight:800;margin-bottom:8px}
+.perfil p{font-size:14px;color:var(--suave);margin-bottom:14px;min-height:44px}
+.chip{display:inline-block;font-size:12px;font-weight:700;padding:4px 11px;border-radius:99px;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.3);color:#86efac}
+.aviso-grande{
+  max-width:860px;margin:0 auto;background:rgba(251,146,60,.09);border:1px solid rgba(251,146,60,.3);
+  border-radius:14px;padding:26px 28px
+}
+.aviso-grande h3{font-size:19px;margin-bottom:11px;color:#fdba74}
+.aviso-grande p{color:var(--suave);font-size:14.5px}
+.aviso-grande p+p{margin-top:9px}
+.faq{max-width:780px;margin:0 auto;display:grid;gap:11px}
+.faq details{background:rgba(30,26,56,.5);border:1px solid var(--borda);border-radius:12px;padding:16px 20px}
+.faq summary{cursor:pointer;font-weight:600;font-size:15px;list-style:none;display:flex;justify-content:space-between;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";color:var(--roxo);font-weight:800;font-size:19px;line-height:1}
+.faq details[open] summary::after{content:"-"}
+.faq details p{margin-top:11px;color:var(--suave);font-size:14.5px}
+footer{border-top:1px solid var(--borda);padding:38px 0;margin-top:30px}
+.rodape{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center;font-size:13.5px;color:var(--fraco)}
+.rodape a{color:var(--suave);text-decoration:none}
+.rodape a:hover{color:var(--roxo-claro)}
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .6s,transform .6s}
+.reveal.visivel{opacity:1;transform:none}
+@media(max-width:760px){
+  .nav{display:none}
+  .heroi{padding:52px 0 40px}
+  .cartao-foto{margin-top:34px}
+}
+</style>
+</head>
+<body>
+<div class="env">
+
+<header>
+  <div class="limite topo">
+    <div class="marca"><div class="logo">M</div> Modo Jogo Limpo</div>
+    <nav class="nav">
+      <a href="#funcionalidades">Funcionalidades</a>
+      <a href="#perfis">Perfis</a>
+      <a href="#seguranca">Seguranca</a>
+      <a href="#instalar">Instalar</a>
+      <a href="https://github.com/Hellmet64f/modo-jogo-limpo">Codigo</a>
+    </nav>
+    <a class="btn btn-primario btn-topo" href="https://github.com/Hellmet64f/modo-jogo-limpo/releases/latest/download/ModoJogoLimpo-v4.0.zip">Descarregar</a>
+  </div>
+</header>
+
+<div class="limite">
+
+  <div class="heroi">
+    <div class="etiquetas">
+      <span class="etiqueta aviso">Versao beta</span>
+      <span class="etiqueta">Windows 10 / 11</span>
+      <span class="etiqueta">C# + PowerShell</span>
+      <span class="etiqueta">Codigo aberto - MIT</span>
+      <span class="etiqueta">Sem instalar nada</span>
+    </div>
+    <h1>O teu PC como uma<br>sessao de cloud gaming</h1>
+    <p class="subtitulo">Fecha tudo o que nao e jogo, esconde a interface do Windows 11, pausa as atualizacoes
+      e liberta a RAM - e depois <b>desfaz tudo, ao milimetro</b>, quando quiseres.</p>
+    <div class="acoes">
+      <a class="btn btn-primario" href="https://github.com/Hellmet64f/modo-jogo-limpo/releases/latest/download/ModoJogoLimpo-v4.0.zip">Descarregar v4.0 (79 KB)</a>
+      <a class="btn btn-fantasma" href="https://github.com/Hellmet64f/modo-jogo-limpo">Ver o codigo</a>
+    </div>
+    <p class="nota">Windows 10 ou 11 &middot; requer administrador &middot;
+      <a href="https://github.com/Hellmet64f/modo-jogo-limpo/releases/latest" style="color:var(--roxo-claro)">todas as versoes</a></p>
+
+    <div class="cartao-foto reveal">
+      <img src="01-painel.png" alt="O Modo Jogo Limpo a funcionar">
+    </div>
+  </div>
+
+  <div class="estat">
+    <div class="estat-item reveal"><div class="estat-num">240 &rarr; 148</div><div class="estat-rot">processos a correr</div></div>
+    <div class="estat-item reveal"><div class="estat-num">+0,7 GB</div><div class="estat-rot">RAM libertada</div></div>
+    <div class="estat-item reveal"><div class="estat-num">50</div><div class="estat-rot">servicos de fundo parados</div></div>
+    <div class="estat-item reveal"><div class="estat-num">0</div><div class="estat-rot">coisas que nao voltam por si</div></div>
+  </div>
+
+</div>
+
+<section id="funcionalidades">
+  <div class="limite">
+    <div class="cabecalho reveal">
+      <div class="tag">Funcionalidades</div>
+      <h2>Tudo o que desligas, a tua escolha</h2>
+      <p>Cada categoria e um interruptor. Vês o que cada uma faz antes de a ligares.</p>
+    </div>
+    <div class="grelha">
+      <div class="cartao reveal"><div class="icone">UI</div><h3>Interface do Windows 11</h3><p>Barra de tarefas escondida, menu Inicio, barra de pesquisa, widgets, chat, Cortana e notificacoes desligados.</p></div>
+      <div class="cartao reveal"><div class="icone">TLM</div><h3>Telemetria e recolha de dados</h3><p>34 servicos de recolha, tarefas agendadas de compatibilidade e a politica de telemetria a zero.</p></div>
+      <div class="cartao reveal"><div class="icone">UPD</div><h3>Windows Update</h3><p>Pausado durante a sessao. No fim volta exactamente ao estado em que estava.</p></div>
+      <div class="cartao reveal"><div class="icone">IDX</div><h3>Indexacao e busca</h3><p>O Windows Search e o indexador de ficheiros param de trabalhar.</p></div>
+      <div class="cartao reveal"><div class="icone">DVR</div><h3>Gravacao de tela</h3><p>Game DVR desligado - deixa de gravar o teu ecra em segundo plano e roubar FPS.</p></div>
+      <div class="cartao reveal"><div class="icone">FPS</div><h3>Desempenho e energia</h3><p>Plano "Desempenho Maximo", CPU minima a 100%, sem suspensao USB nem PCIe.</p></div>
+      <div class="cartao reveal"><div class="icone">BLQ</div><h3>Programas que voltam sozinhos</h3><p>59 programas bloqueados: Edge, OneDrive, Copilot, widgets, bloatware do fabricante.</p></div>
+      <div class="cartao reveal"><div class="icone">INI</div><h3>Itens de inicializacao</h3><p>Adiados ate ao fim da sessao, e repostos a mesma.</p></div>
+      <div class="cartao reveal"><div class="icone">DEF</div><h3>Antivirus</h3><p>Exclusoes para o Epic e o Steam, com a proteccao em tempo real desactivada durante a partida.</p></div>
+      <div class="cartao reveal"><div class="icone">IMG</div><h3>Area de trabalho</h3><p>Fica so o icone do aplicativo, o Epic, o Steam e os teus jogos.</p></div>
+      <div class="cartao reveal"><div class="icone">LMP</div><h3>Processos e servicos de fundo</h3><p>Fecha o que nao e jogo e para os servicos que so pesam.</p></div>
+      <div class="cartao reveal"><div class="icone">VIG</div><h3>O vigilante</h3><p>Fica a trabalhar em segundo plano, de 2 em 2 segundos, a fechar o que o Windows volta a abrir.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="perfis" style="background:rgba(23,18,48,.35)">
+  <div class="limite">
+    <div class="cabecalho reveal">
+      <div class="tag">Perfis</div>
+      <h2>Tres formas de jogar</h2>
+      <p>Escolhes o ponto de partida. E podes sempre ajustar tudo a mao.</p>
+    </div>
+    <div class="grelha">
+      <div class="perfil atual reveal">
+        <h3 style="color:var(--roxo-claro)">NUVEM</h3>
+        <p>Desliga tudo. So o jogo, os launchers e o sistema minimo. O mais leve de todos.</p>
+        <span class="chip">PERFIL RECOMENDADO</span>
+      </div>
+      <div class="perfil reveal">
+        <h3 style="color:var(--azul)">LEVE</h3>
+        <p>Mantem Discord, WhatsApp e o navegador. Nao mexe no Update nem no rato.</p>
+        <span class="chip" style="background:rgba(59,130,246,.14);border-color:rgba(59,130,246,.3);color:#93c5fd">PARA JOGAR COM AMIGOS</span>
+      </div>
+      <div class="perfil reveal">
+        <h3 style="color:var(--verde)">PERSONALIZADO</h3>
+        <p>Escolhes categoria por categoria, e a lista de programas a nao fechar.</p>
+        <span class="chip" style="background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.3);color:#86efac">TUDO NAS TUAS MAOS</span>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="seguranca">
+  <div class="limite">
+    <div class="cabecalho reveal">
+      <div class="tag">Seguranca</div>
+      <h2>O que NUNCA e tocado</h2>
+      <p>Estas regras estao no codigo e sao a razao de o aplicativo nao partir o teu PC.</p>
+    </div>
+    <ul class="lista">
+      <li class="reveal"><span class="x">OK</span><span><b>O WebView2</b> - e o motor de interface da Epic, do Roblox e da propria pesquisa do Windows. Bloquear ou matar deixa a janela <b>preta</b>. Nunca e tocado.</span></li>
+      <li class="reveal"><span class="x">OK</span><span><b>O anti-cheat</b> - Easy Anti-Cheat, BattlEye, GameGuard, XignCode, nProtect e Valve. Se um destes morrer, o jogo da erro e nao arranca.</span></li>
+      <li class="reveal"><span class="x">OK</span><span><b>O driver de video, o audio e a rede</b> - o que da a imagem, o som e a ligacao.</span></li>
+      <li class="reveal"><span class="x">OK</span><span><b>O Explorador</b> - e ele que desenha o wallpaper e a area de trabalho.</span></li>
+      <li class="reveal"><span class="x">OK</span><span><b>O TokenBroker</b> - e o login Microsoft usado pela Epic e pela Store.</span></li>
+      <li class="reveal"><span class="x">OK</span><span><b>Os servicos termicos do fabricante</b> - Care Center e Experience Zone.</span></li>
+    </ul>
+
+    <div class="aviso-grande reveal" style="margin-top:38px">
+      <h3>Como garantimos que volta tudo</h3>
+      <p>A maioria dos "modos jogo" da internet desligam coisas e <b>nunca mais ligam</b>. Este faz o inverso: antes de mexer em
+        alguma coisa, grava o estado anterior de <b>tudo</b> - cada servico (e o seu tipo de arranque), cada tarefa agendada,
+        cada chave de registo, o plano de energia, as exclusoes do antivirus, os itens de inicializacao e os atalhos -
+        num ficheiro <code style="color:var(--cyan)">snapshot.json</code> que podes abrir e ler tu mesmo.</p>
+      <p>O "modo normal" le esse ficheiro e desfaz item a item. <b>Se o snapshot nao puder ser lido, nada e alterado.</b>
+        E ha o <code style="color:var(--cyan)">-DryRun</code>, que mostra exactamente o que ia ser feito sem tocar em nada.</p>
+    </div>
+  </div>
+</section>
+
+<section id="ecra" style="background:rgba(23,18,48,.35)">
+  <div class="limite">
+    <div class="cabecalho reveal">
+      <div class="tag">As quatro paginas</div>
+      <h2>Veis sempre o que se esta a passar</h2>
+    </div>
+    <div class="galeria">
+      <div class="shot reveal"><img src="01-painel.png" alt="Painel"><div class="legenda"><b>Painel</b> - ligar/desligar, medidores e registo em tempo real</div></div>
+      <div class="shot reveal"><img src="02-perfis.png" alt="Perfis"><div class="legenda"><b>Perfis</b> - o que desligar e o que nunca fechar</div></div>
+      <div class="shot reveal"><img src="03-estado.png" alt="Estado"><div class="legenda"><b>Estado</b> - o que foi desligado e o que o sistema faz agora</div></div>
+      <div class="shot reveal"><img src="04-ajustes.png" alt="Ajustes"><div class="legenda"><b>Ajustes</b> - pasta, wallpaper, pesquisa do Windows</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="instalar">
+  <div class="limite">
+    <div class="cabecalho reveal">
+      <div class="tag">Instalar</div>
+      <h2>Tres passos</h2>
+      <p>Sem instalador, sem dependencias, sem mexer no registo para instalar.</p>
+    </div>
+    <div class="passos">
+      <div class="passo reveal"><div><h4>Descarrega e extrai</h4><p>79 KB. Extrai para uma pasta tua, por exemplo <code style="color:var(--cyan)">C:\JogoLimpo</code>.</p></div></div>
+      <div class="passo reveal"><div><h4>Executa o ModoJogo.exe</h4><p>Vai aparecer um pedido de autorizacao de administrador. <b>Aceita</b> - e preciso para mexer em servicos, tarefas e registo.</p></div></div>
+      <div class="passo reveal"><div><h4>Carrega em MODO JOGO</h4><p>Ou usa o atalho <code style="color:var(--cyan)">Ctrl+Alt+J</code>. Para voltar ao normal: <code style="color:var(--cyan)">Ctrl+Alt+M</code>.</p></div></div>
+    </div>
+    <div class="caixa-codigo reveal" style="max-width:760px;margin:22px auto 0">
+      <span class="com"># ou pela linha de comandos, para ver o plano sem tocar em nada:</span><br>
+      powershell -ExecutionPolicy Bypass -File ModoJogo.ps1 -Acao Ativar -Perfil nuvem -DryRun
+    </div>
+  </div>
+</section>
+
+<section id="perguntas" style="background:rgba(23,18,48,.35)">
+  <div class="limite">
+    <div class="cabecalho reveal">
+      <div class="tag">Perguntas</div>
+      <h2>As duvidas que toda a gente tem</h2>
+    </div>
+    <div class="faq">
+      <details class="reveal"><summary>Isso vai partir o meu PC?</summary><p>Nao. Antes de mexer em alguma coisa, o aplicativo grava um snapshot com o estado anterior de tudo. Se algo correr mal, o botao "REPARAR" na pagina <b>Estado</b> restaura tudo a partir do snapshot. E se o snapshot nao for legivel, nada e alterado.</p></details>
+      <details class="reveal"><summary>Volta a abrir os programas que fechou?</summary><p>Nao. E o comportamento de um modo jogo a serio. Se quiseres manter algum aberto (Discord, WhatsApp, o teu editor), escreve o nome na lista "Nao fechar estes programas" na pagina <b>Perfis</b>.</p></details>
+      <details class="reveal"><summary>Porque e que a Epic abria com a janela toda preta?</summary><p>Porque o WebView2 - o motor de interface da Epic nova - estava a ser bloqueado. O WebView2 e tambem o motor da pesquisa do Windows 11. Ja esta corrigido, e ha um teste automatico que garante que nunca mais e bloqueado.</p></details>
+      <details class="reveal"><summary>Posso usar o codigo e fazer a minha versao?</summary><p>Podes. E MIT: usa, copia, modifica e distribui a vontade. Se quiseres que o <b>projeto original</b> melhore, abre uma issue ou manda um pull request. O historico do git conta como cada bug foi diagnosticado e corrigido.</p></details>
+      <details class="reveal"><summary>Da para chegar aos 60-80 processos?</summary><p>Exigiria desligar servicos do sistema <b>em todo o arranque</b> (compartilhamento de svchost), o que obriga a reiniciar e traz risco de o Windows nao arrancar. Nao esta incluido de proposito. O que temos: 240 &rarr; 148 processos, com o sistema inteiro a funcionar.</p></details>
+      <details class="reveal"><summary>E seguro deixar o antivirus desligado?</summary><p>Desligar a proteccao em tempo real da mais FPS, mas abre uma janela de seguranca durante a partida. As exclusoes para o Epic e o Steam sao sempre aplicadas. A decisao e tua, e o aplicativo diz-te o que fez.</p></details>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="limite rodape">
+    <div>Modo Jogo Limpo v4.0 &middot; <a href="https://github.com/Hellmet64f/modo-jogo-limpo">github.com/Hellmet64f/modo-jogo-limpo</a> &middot; MIT</div>
+    <div>Feito com <a href="https://opencode.ai">OpenCode</a> &middot; <a href="https://github.com/Hellmet64f/modo-jogo-limpo/issues">Reportar um bug</a></div>
+  </div>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var els = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window)) {
+    for (var i=0;i<els.length;i++) els[i].classList.add('visivel');
+    return;
+  }
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting) { e.target.classList.add('visivel'); obs.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  for (var i=0;i<els.length;i++) obs.observe(els[i]);
+})();
+</script>
+</body>
+</html>

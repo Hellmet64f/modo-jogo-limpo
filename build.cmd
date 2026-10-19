@@ -36,7 +36,7 @@ pushd "%APP%"
   /reference:System.Windows.Forms.dll ^
   /reference:System.Web.Extensions.dll ^
   /reference:Microsoft.VisualBasic.dll ^
-  ModoJogo.cs UI.cs SeletorWallpaper.cs
+  ModoJogo.cs UI.cs SeletorWallpaper.cs Version.cs
 
 set "ERRO=%ERRORLEVEL%"
 popd
@@ -54,3 +54,4 @@ for %%F in ("%SAIDA%") do echo     Data   : %%~tF
 echo.
 echo Feche o Modo Jogo que estiver aberto antes de substituir o exe.
 exit /b 0
+
