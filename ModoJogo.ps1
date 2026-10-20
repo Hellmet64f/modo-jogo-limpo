@@ -31,14 +31,18 @@ param(
 )
 
 $ErrorActionPreference = 'SilentlyContinue'
-$ProgressPreference    = 'SilentlyContinue'
-
-# =====================================================================
 #  SETUP
 # =====================================================================
 $Estado = "$env:LOCALAPPDATA\ModoJogoLimpo"
 if ((Test-Path $Estado) -and -not (Get-Item $Estado -Force).PSIsContainer) { Remove-Item $Estado -Force }
 New-Item $Estado -ItemType Directory -Force | Out-Null
+
+# O registo e gravado SEMPRE, exista ou nao a app a correr. Quem executa
+# o script pela linha de comandos tambem deixa o log em ultima-saida.txt.
+$script:Transcricao = $null
+try {
+    $script:Transcricao = Start-Transcript -Path "$Estado\ultima-saida.txt" -Force -ErrorAction Stop
+} catch { $script:Transcricao = $null }
 
 $ArquivoSnapshot  = "$Estado\snapshot.json"
 $ArquivoResultado = "$Estado\resultado.txt"
@@ -1112,6 +1116,8 @@ switch ($Acao) {
     'Estado'    { Mostrar-Estado }
     'Busca'     { Busca $EstadoBusca }
 }
+
+if ($script:Transcricao) { try { Stop-Transcript | Out-Null } catch { } $script:Transcricao = $null }
 
 
 

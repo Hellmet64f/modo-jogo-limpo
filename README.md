@@ -43,29 +43,38 @@
 
 <div align="center">
 
-### Modo **jogo ligado** — 148 processos, 2,9 GB de RAM livres
+### Modo jogo ligado — 148 processos, 2,9 GB de RAM livres
 
-<img src="docs/11-jogo-painel.png" alt="Modo jogo ativo" width="92%">
+<img src="docs/11-jogo-painel.png" alt="O Modo Jogo Limpo com o modo jogo ligado" width="94%">
 
 <br/>
 
 <details>
-<summary><b>Ver as outras páginas com o modo jogo ligado</b></summary>
+<summary><b>▸ Ver o aplicativo em vários estados e testes</b></summary>
 
-<p align="center">
-<img src="docs/12-jogo-perfis.png" alt="Perfis" width="46%">
-<img src="docs/13-jogo-estado.png" alt="Estado" width="46%">
-</p>
+<br/>
 
-<p align="center">
-<img src="docs/14-jogo-ajustes.png" alt="Ajustes" width="46%">
-</p>
+**① Modo normal — a app em repouso, à espera**
+
+<p align="center"><img src="docs/01-painel.png" alt="Modo normal" width="94%"></p>
+
+**② Perfis — o que desligar, e o que nunca fechar**
+
+<p align="center"><img src="docs/12-jogo-perfis.png" alt="Perfis" width="94%"></p>
+
+**③ Estado — o que foi desligado, lido do snapshot**
+
+<p align="center"><img src="docs/13-jogo-estado.png" alt="Estado" width="94%"></p>
+
+**④ Ajustes — pasta, wallpaper e a pesquisa do Windows**
+
+<p align="center"><img src="docs/14-jogo-ajustes.png" alt="Ajustes" width="94%"></p>
+
+**⑤ O ecrã com o modo jogo a correr**
+
+<p align="center"><img src="docs/15-modo-jogo-ecra.png" alt="O ambiente de trabalho limpo" width="94%"></p>
 
 </details>
-
-### E o ecrã quando o modo jogo está a correr
-
-<img src="docs/15-modo-jogo-ecra.png" alt="O ambiente de trabalho limpo" width="92%">
 
 </div>
 
@@ -312,3 +321,4 @@ corrigido está lá, com a explicação do porque.
 🌐 **Site do projeto:** https://hellmet64f.github.io/modo-jogo-limpo/
 
 Feito com **[OpenCode](https://opencode.ai)**.
+

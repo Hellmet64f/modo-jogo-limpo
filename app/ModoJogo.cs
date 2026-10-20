@@ -24,7 +24,7 @@ namespace ModoJogoApp
 
         // ---------- coracao ----------
         private string arquivoEstado, arquivoResultado, arquivoSnapshot, arquivoWallpadrao;
-        private string pastaWallpapers, scriptCaminho, arquivoSaida;
+        private string pastaWallpapers, scriptCaminho, arquivoSaida, arquivoLog;
         private string wallSelecionado = "";
         private bool rodando = false;
 
@@ -155,7 +155,8 @@ namespace ModoJogoApp
             arquivoResultado  = Path.Combine(EstadoDir, "resultado.txt");
             arquivoSnapshot   = Path.Combine(EstadoDir, "snapshot.json");
             arquivoWallpadrao = Path.Combine(EstadoDir, "wallpadrao.txt");
-            arquivoSaida      = Path.Combine(EstadoDir, "ultima-saida.txt");
+            arquivoSaida      = Path.Combine(EstadoDir, "processo.txt");
+            arquivoLog        = Path.Combine(EstadoDir, "ultima-saida.txt");  // registo gravado pelo proprio script
             pastaWallpapers   = Path.Combine(DirBase, "wallpapers");
             scriptCaminho     = Path.Combine(DirBase, "ModoJogo.ps1");
 
@@ -258,6 +259,7 @@ namespace ModoJogoApp
             // Ao arrancar, o estado tem de reflectir a realidade: se o modo
             // jogo ja estiver ligado, o texto tem de dizer isso.
             AtualizarEstado();
+            CarregarUltimoLog();
             if (File.Exists(arquivoEstado))
             {
                 int procAtivos = Process.GetProcesses().Length;
@@ -273,12 +275,32 @@ namespace ModoJogoApp
         {
             if (keyData == (Keys.Control | Keys.Alt | Keys.J)) { RestaurarApp(); Executar("Ativar"); return true; }
             if (keyData == (Keys.Control | Keys.Alt | Keys.M)) { RestaurarApp(); Executar("Desativar"); return true; }
+            if (keyData == (Keys.Control | Keys.Alt | Keys.P)) { GuardarCaptura(); return true; }
             return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        // Ctrl+Alt+P: guarda a janela actual num PNG, para screenshots.
+        private void GuardarCaptura()
+        {
+            try
+            {
+                string pasta = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Modo Jogo Limpo");
+                RestaurarApp();   // a janela tem de estar visivel para ser desenhada
+                Application.DoEvents();
+                System.Threading.Thread.Sleep(400);
+                Directory.CreateDirectory(pasta);
+                string nome = "modo-jogo-" + DateTime.Now.ToString("yyyy-MM-dd-HHmmss") + ".png";
+                string ficheiro = Path.Combine(pasta, nome);
+                ExportarImagem(ficheiro);
+                Anexar("Captura guardada: " + ficheiro);
+            }
+            catch (Exception ex) { Anexar("Nao consegui guardar a captura: " + ex.Message); }
         }
 
         protected override void OnActivated(EventArgs e)
         {
             base.OnActivated(e);
+            if (pagDiag != null && pagDiag.Visible) CarregarDiagnostico();
             SetWindowPos(this.Handle, new IntPtr(-1), 0, 0, 0, 0, 0x0003);
         }
 
@@ -400,7 +422,7 @@ namespace ModoJogoApp
                          : qual == "perfis" ? "O que o modo jogo desliga"
                          : qual == "diag" ? "O que foi desligado e o que voltou"
                                            : "Pasta, wallpaper e manutencao";
-            if (qual == "diag") CarregarDiagnostico();
+            if (qual == "diag") CarregarDiagnostico();   // relê o snapshot (muda durante a execucao)
         }
 
         // =================================================================
@@ -1295,6 +1317,22 @@ namespace ModoJogoApp
         // =================================================================
         //  ESTADO E BOTOES
         // =================================================================
+        // Ao arrancar, mostra a ultima execucao. Se o script correu e a app
+        // foi fechada, o registo continua visivel.
+        private void CarregarUltimoLog()
+        {
+            try
+            {
+                if (txtLog == null) return;
+                if (File.Exists(arquivoLog))
+                {
+                    string[] linhas = File.ReadAllLines(arquivoLog);
+                    foreach (string ln in linhas) Anexar(ln);
+                }
+            }
+            catch { }
+        }
+
         private void AtualizarEstado()
         {
             bool ativo = File.Exists(arquivoEstado);
@@ -1664,6 +1702,8 @@ namespace ModoJogoApp
             Anexar("");
             Anexar("--- " + (acao == "Ativar" ? "MODO JOGO" : "MODO NORMAL") + " em " +
                    Math.Round(dur) + "s ---");
+            // A pagina ESTADO tem de reflectir o snapshot ja completo.
+            if (pagDiag.Visible) CarregarDiagnostico();
             AtualizarEstado();
         }
 
@@ -1672,6 +1712,15 @@ namespace ModoJogoApp
             if (InvokeRequired) { try { BeginInvoke(new Action(() => Anexar(linha))); } catch { } return; }
             string l = linha.Trim();
             if (l.Length == 0) return;
+            // o transcript do PowerShell deixa um cabecalho e um rodape: nao interessam
+            if (l.StartsWith("***")) return;
+            if (l.StartsWith("Fim da transcri")) return;
+            if (l.StartsWith("Hora de t")) return;
+            if (l.StartsWith("A sess")) return;
+            if (l.StartsWith("Vers")) return;
+            if (l.StartsWith("Transcript")) return;
+            if (l.StartsWith("A execucao de")) return;
+            if (txtLog == null) return;
             txtLog.AppendText(l + Environment.NewLine);
             txtLog.SelectionStart = txtLog.Text.Length;
             txtLog.ScrollToCaret();
