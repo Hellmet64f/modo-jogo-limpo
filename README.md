@@ -43,7 +43,7 @@
 
 <div align="center">
 
-### Modo jogo ligado — 148 processos, 2,9 GB de RAM livres
+### Modo jogo ligado — 135 processos, 2.26 GB de RAM livres
 
 <img src="docs/11-jogo-painel.png" alt="O Modo Jogo Limpo com o modo jogo ligado" width="94%">
 
