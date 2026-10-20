@@ -1,4 +1,5 @@
 ﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -36,6 +37,7 @@ namespace ModoJogoApp
         // "NAO FECHAR ESTES PROGRAMAS" na pagina PERFIS e editavel.
         private string manterProcessos = "OpenCode,Code,RobloxStudio,devenv,obs64,StudioMCP";
         private bool opcaoVigiarBarra = true;
+        private string paginaAtual = "painel";
         private Caixa caixaVigilante;
         private bool opcaoVigilante = true;
         private bool opcaoConfirmar = true;
@@ -289,7 +291,7 @@ namespace ModoJogoApp
                 Application.DoEvents();
                 System.Threading.Thread.Sleep(400);
                 Directory.CreateDirectory(pasta);
-                string nome = "modo-jogo-" + DateTime.Now.ToString("yyyy-MM-dd-HHmmss") + ".png";
+                string nome = "modo-jogo-" + paginaAtual + "-" + DateTime.Now.ToString("yyyy-MM-dd-HHmmss") + ".png";
                 string ficheiro = Path.Combine(pasta, nome);
                 ExportarImagem(ficheiro);
                 Anexar("Captura guardada: " + ficheiro);
@@ -423,6 +425,7 @@ namespace ModoJogoApp
                          : qual == "diag" ? "O que foi desligado e o que voltou"
                                            : "Pasta, wallpaper e manutencao";
             if (qual == "diag") CarregarDiagnostico();   // relê o snapshot (muda durante a execucao)
+            paginaAtual = (qual == "diag" ? "estado" : qual);
         }
 
         // =================================================================
